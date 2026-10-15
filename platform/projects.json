@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "projects": {
+    "ysyx": "projects/ysyx",
+    "cs61b": "projects/cs61b",
+    "cs336": "projects/cs336"
+  }
+}

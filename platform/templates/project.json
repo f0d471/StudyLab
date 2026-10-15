@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "replace-me",
+  "kind": "course",
+  "tags": [],
+  "workingDirectory": ".",
+  "environment": {},
+  "capabilities": [],
+  "limits": {
+    "runtimeSeconds": 1800
+  }
+}
