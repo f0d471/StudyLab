@@ -515,15 +515,17 @@ a{color:#145f93}h1{font-size:30px}input{font:inherit;padding:12px;width:100%;box
 summary{cursor:pointer;font-weight:bold;font-size:20px;padding:12px 0}li{margin:7px 0}small{color:#697b89;font-size:12px}p{max-width:900px}
 #results p{font-size:14px;margin:2px 0 14px}nav{display:flex;gap:24px;padding:14px 0}.note{background:#eaf3fa;border-left:4px solid #3876a3;padding:12px 16px}</style></head><body>
 <h1>YSYX 与 PA 离线资料</h1><p>公开网页的本地学习副本。保留来源、原有正文和许可说明；网页会持续更新，本副本只代表下载时的版本。</p>
-<nav><a href="ysyx.oscc.cc/docs/index.html">一生一芯课程主页</a><a href="ysyx.oscc.cc/docs/ics-pa/index.html">PA 实验主页</a><a href="../README.md">下载说明与核对结果</a></nav>
+<nav><a href="ysyx.oscc.cc/docs/index.html">一生一芯课程主页</a><a href="ysyx.oscc.cc/docs/ics-pa/index.html">PA 实验主页</a><a href="../offline-report.md">下载与核对记录</a></nav>
 <p class="note">讲义使用本地网页跳转；站内课件提供连续阅读版。站外视频、文章、云文档及服务仍需联网，完整清单在 external-links.json。</p>
 <label for="search">全文搜索（支持多个关键词）</label><input id="search" type="search" placeholder="例如：差分测试、流水线、表达式求值"><p id="search-status"></p><ul id="results"></ul>
 <h2>全部页面目录</h2>"""+catalog+"""<script src="_offline/search-data.js"></script><script src="_offline/search.js"></script></body></html>"""
+        if (self.root/"README.md").is_file():
+            landing=landing.replace("</nav>", '<a href="../README.md">资料目录与维护规则</a></nav>', 1)
         (self.site/"index.html").write_text(landing,encoding="utf-8")
         (self.root/"content-check.json").write_text(json.dumps({"checked_pages":len(pages),"mismatches":content_errors},ensure_ascii=False,indent=2),encoding="utf-8")
         (self.root/"external-links.json").write_text(json.dumps([{"url":u,"relation":r} for u,r in sorted(self.external)],ensure_ascii=False,indent=2),encoding="utf-8")
-        if not (self.root/"README.md").exists():
-            (self.root/"README.md").write_text("# YSYX 与 PA 离线资料\n\n离线网页已生成，下载与引用核对结果正在写入。\n",encoding="utf-8")
+        if not (self.root/"offline-report.md").exists():
+            (self.root/"offline-report.md").write_text("# 离线镜像下载与核对记录\n\n离线网页已生成，下载与引用核对结果正在写入。\n",encoding="utf-8")
         self.save(finished=True)
         return pages,content_errors
 
@@ -600,15 +602,18 @@ summary{cursor:pointer;font-weight:bold;font-size:20px;padding:12px 0}li{margin:
         report["local_reference_check_passed"]=not missing
         report["content_preservation_passed"]=not content["mismatches"]
         (self.root/"verification.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
-        self.write_readme(report)
+        self.write_report(report)
         print(json.dumps({k:v for k,v in report.items() if k not in ("download_failures","missing_local_files","remote_embedded_assets","unresolved_source_fragments","content_preservation","resolved_navigation_aliases")},ensure_ascii=False,indent=2),flush=True)
         print(json.dumps({"failures":len(failures),"missing_local_files":len(missing),"remote_embedded_assets":len(remote_embeds),"unresolved_source_fragments":len(fragments)},ensure_ascii=False),flush=True)
         return report
 
-    def write_readme(self,r):
+    def write_report(self,r):
         kinds=collections.Counter(x.get("kind") for x in self.records.values() if x.get("status")=="ok")
         failures=r["download_failures"]
-        text="\n".join(["# YSYX 与 PA 离线资料","",
+        ownership="本文件由 mirror_docs.py 生成。"
+        if (self.root/"README.md").is_file():
+            ownership+="目录结构与维护规则见 [README](README.md)。"
+        text="\n".join(["# 离线镜像下载与核对记录","",ownership,"",
             "来源：[一生一芯官方讲义](https://ysyx.oscc.cc/docs/)；[PA 实验讲义](https://ysyx.oscc.cc/docs/ics-pa/)。",
             "","下载与核对时间（UTC）："+r["verified_utc"]+"。","",
             "## 本地阅读","","直接用浏览器打开 [离线首页](site/index.html)。无需启动服务器，目录、全文搜索、章节链接、代码块、表格、折叠块、图片与字体均使用本地文件。",
@@ -641,7 +646,7 @@ summary{cursor:pointer;font-weight:bold;font-size:20px;padding:12px 0}li{margin:
             "","## 来源与许可","",
             "本副本用于本地学习，保留原页面的作者、来源链接、许可声明和引用。PA 首页声明采用 CC BY-NC-SA 3.0 中国大陆许可；其他页面与第三方素材以各自原始声明为准。MathJax 来自 mathjax@3.2.2 官方 npm 包，采用 Apache-2.0 许可。",
             "","本次核对覆盖下载和离线文件，不代表课程实验代码已经实现或通过功能验证。",""])
-        (self.root/"README.md").write_text(text,encoding="utf-8")
+        (self.root/"offline-report.md").write_text(text,encoding="utf-8")
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

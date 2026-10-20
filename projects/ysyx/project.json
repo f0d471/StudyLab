@@ -7,14 +7,14 @@
     "risc-v",
     "os"
   ],
-  "workingDirectory": "Main",
+  "workingDirectory": "ysyx-workbench",
   "environment": {
-    "YSYX_HOME": "/workspace/Main",
-    "NEMU_HOME": "/workspace/Main/nemu",
-    "AM_HOME": "/workspace/Main/abstract-machine",
-    "NPC_HOME": "/workspace/Main/npc",
-    "NAVY_HOME": "/workspace/Main/navy-apps",
-    "NVBOARD_HOME": "/workspace/Main/nvboard",
+    "YSYX_HOME": "/workspace/ysyx-workbench",
+    "NEMU_HOME": "/workspace/ysyx-workbench/nemu",
+    "AM_HOME": "/workspace/ysyx-workbench/abstract-machine",
+    "NPC_HOME": "/workspace/ysyx-workbench/npc",
+    "NAVY_HOME": "/workspace/ysyx-workbench/navy-apps",
+    "NVBOARD_HOME": "/workspace/ysyx-workbench/nvboard",
     "PATH": "/toolchains/verilator-5052/bin:/usr/bin:/bin:/usr/sbin:/sbin"
   },
   "capabilities": [

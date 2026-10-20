@@ -7,7 +7,7 @@ install_dir="${STUDYLAB_TOOLCHAIN_PREFIX:-$project_dir/cache/toolchain-install/v
 cd "$source_dir"
 unset VERILATOR_ROOT
 # Registered source identity avoids a full Git status scan over DrvFs.
-expected_revision=$(python3 -c 'import json,sys; from pathlib import Path; d=json.loads(Path(sys.argv[1]).read_text()); print(next(s["commit"] for s in d["sources"] if s["name"] == "verilator"))' "$project_dir/Main/docs/sources.json")
+expected_revision=$(python3 -c 'import json,sys; from pathlib import Path; d=json.loads(Path(sys.argv[1]).read_text()); print(next(s["commit"] for s in d["sources"] if s["name"] == "verilator"))' "$project_dir/ysyx-workbench/docs/sources.json")
 if [ "$(git rev-parse HEAD)" != "$expected_revision" ]; then
   echo 'Verilator source revision differs from the registered version; update the source record and build configuration first.' >&2
   exit 1
