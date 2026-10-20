@@ -1,0 +1,17 @@
+{
+  "registeredUtc": "2026-10-16T08:21:35.9198082Z",
+  "name": "rt-thread-am",
+  "url": "https://github.com/NJU-ProjectN/rt-thread-am.git",
+  "branch": "master",
+  "commit": "72ba231bb79db53f1c07920f2642ef20679faeff",
+  "directory": "rt-thread-am",
+  "lecture": "https://ysyx.oscc.cc/docs/ics-pa/4.1.html",
+  "courseEntry": "https://ysyx.oscc.cc/docs/2607/b/1.html",
+  "checks": {
+    "cloneCompleted": true,
+    "gitConnectivityPassed": true,
+    "workingTreeClean": true,
+    "buildAndRun": "not performed",
+    "contextExercises": "upstream assert(0) placeholders retained"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "registeredUtc": "2026-10-19T08:48:00Z",
+  "name": "riscv-spec",
+  "description": "RISC-V 官方指令集手册（非特权与特权架构合并版），ISA 语义的唯一权威来源",
+  "url": "https://github.com/riscv/riscv-isa-manual/releases/download/riscv-isa-release-7a90b34-2026-10-15/riscv-spec.pdf",
+  "repo": "https://github.com/riscv/riscv-isa-manual",
+  "tag": "riscv-isa-release-7a90b34-2026-10-15",
+  "publishedUtc": "2026-10-15",
+  "file": "sources/riscv/riscv-spec.pdf",
+  "pages": 909,
+  "sha256": "b1e20a9de862370965d170640bd47decc1d88f243ad9f0f4819b612ede94fc48",
+  "license": "CC-BY-4.0（https://github.com/riscv/riscv-isa-manual/blob/master/LICENSE-CODE 为代码许可，文本为 CC-BY）",
+  "usage": "Knowledge/fundamentals 指令编码、CSR 位段与语义的裁定来源；教程引用时注明手册章节号",
+  "notes": "官方自 2025 年起在 release 只提供合并版单册；不再维护独立 unprivileged/privileged 两册 PDF。git 状态：本地保留，不入库"
+}

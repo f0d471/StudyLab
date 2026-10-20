@@ -10,7 +10,11 @@
 !/projects/ysyx/AGENTS.md
 !/projects/ysyx/docs/
 /projects/ysyx/docs/*
-!/projects/ysyx/docs/体系结构专题.md
+!/projects/ysyx/docs/README.md
+!/projects/ysyx/docs/topics/
+/projects/ysyx/docs/topics/**
+!/projects/ysyx/docs/topics/**/
+!/projects/ysyx/docs/topics/**/*.md
 /toolchains/*
 !/toolchains/README.md
 __pycache__/
@@ -22,3 +26,10 @@ __pycache__/
 !/projects/ysyx/tools/install-dependencies.sh
 !/projects/ysyx/tools/restore-native-link.ps1
 !/projects/ysyx/tools/mirror_docs.py
+
+
+!/projects/ysyx/docs/rt-thread-source.json
+!/projects/ysyx/docs/riscv-spec-source.json
+
+$RECYCLE.BIN/
+System Volume Information/

@@ -1,7 +1,7 @@
 # StudyLab 平台规则
 
 - 本目录是有容量上限的虚拟卷挂载入口，不能按普通目录递归删除或移动；只处理核对过的具体子目录，不遍历重解析点。
-- projects/ 下各项目并列，Main、YSYX、NEMU 等名称不作为其他课程的隐含约定。当前项目与接入状态见 docs/通用学习平台.md。
+- projects/ 下各项目并列，ysyx-workbench、YSYX、NEMU 等名称不作为其他课程的隐含约定。当前项目与接入状态见 docs/通用学习平台.md。
 - Windows 编辑与日常 Git；项目的编译、仿真、调试、课程实验与波形查看必须经 ../Tools/wsl-sandbox/sandbox.ps1 或等价 run.sh。不得退回普通 WSL 运行。
 - 使用 -Project 选择项目；默认 ysyx。联网、GUI、GPU 需要项目描述声明并显式启用。平台资源总池由 profiles/studylab.json 管理，不按项目数扩大。
 - 项目只写自身目录、HOME、缓存和临时盘；共享输入和工具只读。跨项目结果用明确版本与输入声明引用，不复制另一份真源。
