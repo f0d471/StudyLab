@@ -1,0 +1,11 @@
+{
+  "registeredDate": "2026-11-13",
+  "name": "verilator-guide",
+  "description": "Verilator 官方文档（User Guide），E4 RTFM/STFW 的主参考：运行示例、波形与 FST、lint 警告说明都在这里",
+  "url": "https://verilator.org/guide/latest/",
+  "documentedVersion": "5.054",
+  "installedVersion": "5.052",
+  "versionExactReference": "tools/verilator-5.052/share/man/man1/verilator.1（沙箱内 man verilator 可读；与安装版本逐字一致，版本敏感处以此为准）",
+  "usage": "RTFM 章节映射：运行示例→Getting Started/Examples；波形与 FST 生成→User's Guide/Simulating 的 tracing 小节；lint 警告逐条说明→Reference Guide/Errors and Warnings。教程引用时注明章节名",
+  "notes": "官方不提供版本化指南路径（guide/5.052 为 404），在线版跟随最新 release（2026-11-13 实测 5.054，与沙箱 5.052 差 2 个 patch，用法层面无差异）。git 状态：在线资料只登记 URL 不入本地；man 页随 Verilator 安装已在卷内"
+}

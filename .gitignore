@@ -30,6 +30,7 @@ __pycache__/
 
 !/projects/ysyx/docs/rt-thread-source.json
 !/projects/ysyx/docs/riscv-spec-source.json
+!/projects/ysyx/docs/verilator-guide-source.json
 
 $RECYCLE.BIN/
 System Volume Information/
