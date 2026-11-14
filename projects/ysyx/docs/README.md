@@ -12,6 +12,7 @@
 | 搜索全部已下载页面 | [离线首页与全文搜索](site/index.html) |
 | 查看学习记录的组织方式（教程/基础/实验/工程文档） | [学习记录 README](topics/README.md) |
 | 查看 RISC-V 官方手册的来源与版本 | [riscv-spec-source.json](riscv-spec-source.json) |
+| 查看 Verilator 文档与 IEEE 1800 标准的来源与版本 | [verilator-guide-source.json](verilator-guide-source.json)、[sv1800-source.json](sv1800-source.json) |
 | 查看下载范围、统计和缺失项 | [离线镜像记录](offline-report.md) |
 | 查看环境和日常命令 | [平台开发环境](../../../docs/通用学习平台.md)、[主工程日常实验](../ysyx-workbench/docs/日常实验.md) |
 
@@ -26,7 +27,10 @@ docs/
 │   ├── Engineering/          对工程的改造文档：Todo / Bugs / TechReports
 │   └── Knowledge/            知识库：tutorials / fundamentals / labs
 ├── sources/                  外部规格手册等下载资料；本地保留，不入 Git
-│   └── riscv/                RISC-V 官方手册（riscv-spec.pdf）
+│   ├── riscv/                RISC-V 官方手册（riscv-spec.pdf）
+│   ├── verilator/            Verilator 用户指南 PDF
+│   ├── systemverilog/        IEEE 1800-2017 标准全文
+│   └── testbenches/          testbench 方法学参考书
 ├── site/                     适合直接阅读的离线网站
 │   ├── index.html            总目录与全文搜索
 │   ├── ysyx.oscc.cc/          按来源域名保存的官方站点内容
@@ -48,7 +52,9 @@ docs/
 ├── external-links.json       保留在线访问的站外链接
 ├── browser-check.json        浏览器断网抽查记录与截图索引
 ├── rt-thread-source.json     RT-Thread 依赖仓的来源与版本登记
-└── riscv-spec-source.json    RISC-V 官方手册的来源、版本与摘要登记
+├── riscv-spec-source.json    RISC-V 官方手册的来源、版本与摘要登记
+├── verilator-guide-source.json Verilator 用户指南的来源、版本与章节用途登记
+└── sv1800-source.json        IEEE 1800-2017 标准的来源、版本、校验和与用途登记
 ~~~
 
 上述目录均已存在。topics/ 下的教程、基础、实验与工程文档随学习进度建立，不提前写空篇目。
@@ -89,6 +95,7 @@ site 的路径保留来源网站结构，便于从官方链接定位本地页面
 | topics/ | 人工 | 学习记录区（Knowledge 与 Engineering）；收录与体例规则见 [topics README](topics/README.md) |
 | riscv-spec-source.json | 手册登记过程 | 手册版本变化后重新下载、更新登记并复核摘要；同一来源不另建重复登记 |
 | rt-thread-source.json | 依赖登记过程 | 依赖版本改变后核对并更新；同一来源不另建重复登记 |
+| verilator-guide-source.json、sv1800-source.json | 手册登记过程 | 手册或标准换版本后更新登记；sources/ 下的文件变化时重算 sha256 |
 | site/、originals/ | mirror_docs.py | 通过工具抓取、重生成，不在镜像正文内插入个人笔记 |
 | manifest.json | mirror_docs.py | 保存来源、状态、路径和下载登记；不手改成功/失败状态 |
 | progress.json | mirror_docs.py | 记录抓取队列与本次处理进度；它不是课程进度 |
@@ -108,11 +115,12 @@ manifest 是“登记清单”，verification 是“核对结果”。progress �
 
 | 新增内容 | 放置位置 | 约束 |
 | --- | --- | --- |
-| 主线教程篇目 | topics/Knowledge/tutorials/<阶段>/ | 按讲义部分一篇，篇首注明出处，篇末作答讲义必答题 |
+| 主线教程篇目 | topics/Knowledge/tutorials/<阶段>/<NN-部分>/ | 讲义一个部分一个目录，一章一个文件；体例与流程见 [Knowledge README](topics/Knowledge/README.md) |
 | 前置知识与罗列型手册 | topics/Knowledge/fundamentals/ | 用到才加；没被任何教程引用的篇不开 |
-| 实验记录与判据 | topics/Knowledge/labs/<阶段>/ | 实验代码在主工程，这里放跑法、判据与实测 |
+| 演示实验源码与判据脚本 | topics/Knowledge/labs/ 下与章节同名的目录 | 源码与 check.sh 放这里，不进主工程；build/ 被忽略 |
+| 学员在主工程做的实验记录 | topics/Knowledge/labs/<阶段>/<NN-部分>/ 下的 .md | 实验代码在主工程，这里放跑法、判据与实测 |
 | 工程改造文档 | topics/Engineering/ 的 Todo / Bugs / TechReports | 流转与提交同步规则见其 README |
-| 学习记录配图 | 所在文档目录内的 assets/<主题>/ | 图片名称说明内容；在正文引用，不单独堆无说明截图 |
+| 学习记录配图 | 截图放所在文档目录内的 assets/<主题>/；Knowledge 的 SVG 示意图放所在目录的 fig/ | 图片名称说明内容；在正文引用，不单独堆无说明截图 |
 | 官方讲义及站内资源 | 镜像工具管理的 site/、originals/ | 保留原路径和来源；更新工具，不手工拼接另一套镜像 |
 | 外部规格手册等下载资料 | sources/<来源>/，本地保留不入 Git | 在 <名称>-source.json 登记来源、版本、摘要与用途 |
 | 新依赖的来源与固定版本 | 优先使用该依赖已有的来源登记 | 外置项目依赖可采用 <依赖名>-source.json，说明 URL、分支/版本、提交、用途与范围 |
@@ -125,7 +133,7 @@ manifest 是“登记清单”，verification 是“核对结果”。progress �
 
 ### 自编文档的最低要求
 
-1. 开头写明解决的问题、采用的讲义版本/章节和来源链接。
+1. 开头写明解决的问题、采用的讲义版本/章节；来源链接写在开头或集中在篇末（Knowledge 的写法见其 README）。
 2. 引用源码时注明仓库内相对路径，必要时注明提交或配置；代码与说明发生变化后同步更新。
 3. 新术语先给中文含义、全称和具体对象，再解释工作机制；代码片段应说明输入、输出和关键步骤。
 4. 实验结果写清输入、命令、预期、实际结果与限制；原始输出放在对应日志位置。
@@ -172,7 +180,9 @@ manifest 是“登记清单”，verification 是“核对结果”。progress �
 
 - 本 README；
 - topics/ 下的 Markdown（Engineering 与 Knowledge 的全部篇目与 README）；
-- rt-thread-source.json、riscv-spec-source.json。
+- topics/ 下 fig/ 目录里的 SVG 配图；
+- Knowledge/labs/ 下的实验源码与判据脚本（`.v` `.sv` `.c` `.cpp` `.h` `.sh` `Makefile`），其中的 build/ 不收录；
+- rt-thread-source.json、riscv-spec-source.json、verilator-guide-source.json、sv1800-source.json。
 
 本地保留且默认不收录：
 
@@ -183,7 +193,7 @@ manifest 是“登记清单”，verification 是“核对结果”。progress �
 
 这些本地文件仍有用途；只克隆平台仓不会自动恢复离线资料、依赖源码、缓存和原始证据。
 
-新增需要收录的文档类型时，同步检查平台 [.gitignore](../../../.gitignore)。当前规则放行 topics/ 下全部 Markdown；labs 的判据脚本、配图等非 Markdown 内容按实际引用另行放行。保持镜像、临时文件、大型二进制和未核对再分发权的资料处于忽略范围，不整体放开 docs，也不用强制添加绕过分类规则。
+新增需要收录的文档类型时，同步检查平台 [.gitignore](../../../.gitignore)。当前规则放行 topics/ 下全部 Markdown、fig/ 下的 SVG，以及 Knowledge/labs/ 下上面列出的源码类型；其他非 Markdown 内容按实际引用另行放行。保持镜像、临时文件、大型二进制和未核对再分发权的资料处于忽略范围，不整体放开 docs，也不用强制添加绕过分类规则。
 
 保留原文作者、来源与许可。自编分析注明所用资料；外部文献采用引用或合法来源，不把个人学习副本当作自编作品发布。资料目录结构、工具说明、项目规则和引用路径在同一次改动中保持一致。
 

@@ -1,103 +1,219 @@
 # 02 Verilator 命令行选项速查
 
-    实验    批 1~3 的 verilator 命令实跑（labs/E/01~03 回填实测）
-    依据    Verilator User Guide："Executable and Argument Reference"章与"Errors and Warnings"章
-            （在线 5.054；版本裁定向 man verilator）。教程引用处：tutorials/E/04 1.7、2.2、3.3 节
+    实验目录    labs/fundamentals/02-Verilator命令行选项速查/
+    基线        check.sh 17 PASS / 0 FAIL / 0 SKIP；mutate.sh 6 OK / 0 BAD（2026-11-14 沙箱实跑）
+    环境        沙箱 Ubuntu；Verilator 5.052 2026-09-05 rev 5.052-983a06a
+    依据        man 页（5.052 版，tools/verilator-5.052/share/man/man1/verilator.1 的 ARGUMENT
+                SUMMARY 节，共 259 行选项）；行为探针为本篇 labs 实测。在线指南是 5.054，
+                与所装版本不一致时以 man 页与实测为准
 
-这一篇是清单型篇目：Verilator 选项上百个，全背不现实，用到哪组查哪组。每组先给要解决的问题，再给选项清单。标注规则："批 N 实测"是本机跑过的；"guide"是按手册登记的。清单中警告类别的成因以手册 Errors and Warnings 章节为准，在线版 5.054 与沙箱 5.052 个别新增警告可能有差，版本敏感处查 man。
+**读前须知**：这是清单型篇目，供查不供读。每组开头一句"这组解决什么问题"，然后是表格。
+表格里每个选项的作用按 man 页转述；选项名经 check.sh 逐组核对确实存在于所装版本的
+man 页。第 3 节的五条行为探针是实测，不是转述。想系统地走一遍选项怎么用，读教程
+E/04 各章，本篇是它们背后的案头手册。
 
 ## 你会在哪里撞见它
 
-- tutorials/E/04 1.7 节的仿真命令：--cc/--exe/--build/--top-module
-- 批 2 写 npc/Makefile 的 sim 规则：同一串命令进 Makefile
-- 批 3 的 lint：--lint-only -Wall 与 -Wno-<MSG>
+1. 教程各章的命令行：--cc/--exe/--build/--top-module 的语义在教程第 01 章，本篇是全量
+2. lint 报错要关某类警告、或要把某类升级为错误时，查第 2.4 组
+3. 读别人的 Makefile（如 nvboard 的 example）时见到陌生选项，来对表
 
 ## 这篇要回答的问题
 
-1. 让 Verilator 只检查不生成、或生成并编译，各停在哪个开关上？
-2. 波形（VCD/FST）分别怎么开？
-3. 警告体系：全部打开、按类关闭、按类升级为错误，各用什么选项？常见警告类别有哪些？
+1. 所装版本的选项总表在哪，怎么查才不被在线文档的新版本带偏？
+2. 各组选项分别管什么？
+3. 几条容易拿不准的行为（默认致命、-Wno 的效力、--Mdir），实测是什么样？
 
-## 0 先查三条
+## 1 怎么查本机的 man 页
 
-| 你要解决 | 去第几节 |
+所装 5.052 的完整选项总表在 man 页的 ARGUMENT SUMMARY 节，共 259 行，每行一个选项加
+一句说明。两种读法：
+
+1. 沙箱里 `man verilator`（分页阅读）
+2. 直接读源文件 tools/verilator-5.052/share/man/man1/verilator.1。注意它是 roff 源码，
+   连字符写成 `\-`（所以文件里是 `\-\-cc`），撇号写成 `\*(Aq`；把 `\-` 换回 `-` 就是
+   干净的总表。check.sh 的选项核对就是对这份文件做的
+
+在线指南（verilator.org/guide）跟随最新 release，写的是 5.054；两个 patch 之间选项
+可能有增减。本篇一律按 5.052 的 man 页写。
+
+**[判]**
+
+1. Verilator 版本是 5.052
+2. man 页在位
+
+## 2 选项分组总表
+
+### 2.1 产物形态：让 Verilator 停在哪一步、产出什么
+
+| 选项 | 作用 |
 | --- | --- |
-| 仿真命令的骨架选项 | 1 |
-| 输出目录、产物名、并行编译 | 2 |
-| 生成波形（VCD/FST） | 3 |
-| lint 与警告（打开/关闭/查含义） | 4 |
-| 两态初值与未初始化策略 | 5 |
+| `--cc` | 生成 C++ 输出 |
+| `--sc` | 生成 SystemC 输出 |
+| `--binary` | 连模型带可执行一步构建 |
+| `--lint-only` | 只做 lint，不产出 |
+| `--build` | 生成模型后接着构建可执行或库 |
+| `--exe` | 链接生成可执行（配合提交给它的 C++ 文件） |
+| `--main` | 自动生成 C++ 的 main() 文件 |
+| `-o <executable>` | 最终可执行文件的名字 |
+| `--Mdir <directory>` | 产物目录名（默认 obj_dir） |
+| `-j <jobs>` | 构建并行度（管 --build-jobs 与 --verilate-jobs） |
+| `--build-jobs <jobs>` | 本地编译阶段的并行度 |
+| `--verilate-jobs` | Verilation（生成模型）阶段的并行度 |
 
-## 1 仿真命令骨架
+### 2.2 顶层与端口
 
-| 选项 | 作用 | 依据 |
-| --- | --- | --- |
-| `--cc` | 生成 C++ 模型（相对 SystemC 的 --sc） | guide |
-| `--exe` | 把随后的 C/C++ 文件作为 main 链接进模型 | guide |
-| `--build` | 生成模型后自动调用编译，产出可执行文件 | guide |
-| `--top-module <名>` | 指定顶层模块；多顶层必须写，单顶层建议显式写 | guide |
-| `-j <N>` | 本地编译并行度 | guide |
-| `-o <名>` | 可执行文件改名（默认 V+顶层模块名） | guide |
-| `-CFLAGS '<串>'` | 传给 g++ 的编译选项 | guide |
-| `-LDFLAGS '<串>'` | 传给链接的选项（接 NVBoard 库时用） | guide |
-| `-I<目录> -L<目录> -l<库>` | 头文件/库路径与库名的惯用转发 | guide |
-
-典型组合（批 1）：`verilator --cc --exe --build --top-module top vsrc/top.v csrc/main.cpp`；批 3 接 NVBoard 时加 `-CFLAGS/-LDFLAGS` 指向 nvboard 库（具体串以 nvboard.mk 实读为准）。
-
-## 2 输出控制
-
-| 选项 | 作用 | 依据 |
-| --- | --- | --- |
-| `--Mdir <目录>` | 模型产物目录（默认 obj_dir） | guide |
-| `--lint-only` | 只检查不生成模型（lint 模式） | guide |
-| `--dump-tree` | 把优化后的 AST 打成文本（调试 Verilator 本身时用，主线不需要） | guide |
-
-## 3 波形
-
-| 选项/动作 | 位置 | 作用 |
-| --- | --- | --- |
-| `--trace` | 编译期 | 开 VCD 波形支持 |
-| `--trace-fst` | 编译期 | 开 FST 波形支持（推荐，体积约 VCD 的 1/50，讲义经验值） |
-| `Verilated::traceEverOn(true);` | 运行期 main 里 | 打开运行时 tracing |
-| trace 对象 `trace(top, 99, "文件名")` | 运行期 | 绑定模型与波形文件；99=层次深度上限 |
-| `dump(...)` | 运行期每拍 | 把当前各信号值写进波形 |
-
-三步的完整代码见 05-波形格式与GTKWave；纪律：波形文件只写 /tmp（tutorials/E/04 2.1 节）。
-
-## 4 lint 与警告
-
-| 选项 | 作用 | 依据 |
-| --- | --- | --- |
-| `--lint-only` | 只检查，出警告不生成模型 | guide |
-| `-Wall` | 打开全部检查类别（含风格类） | guide |
-| `-Wno-<MSG>` | 关闭单个警告类别（风格类且确认不影响逻辑才用，讲义例 DECLFILENAME） | guide |
-| `-Wwarn-<MSG>` | 把该类降级为普通警告 | guide |
-| `-Werror-<MSG>` | 把该类升级为错误（关键逻辑类可这样钉死） | guide |
-
-常见警告类别速查（成因以手册 Errors and Warnings 对应条目为准，先查章节再动手）：
-
-| 类别 | 一句话成因 |
+| 选项 | 作用 |
 | --- | --- |
-| WIDTH / WIDTHEXPAND / WIDTHTRUNC | 赋值或连线两侧位宽不等（截断/扩展） |
-| PINMISSING | 实例化端口没接全 |
-| IMPLICIT | 隐式声明 1 位 wire（没声明就用的信号名） |
-| DECLFILENAME | 文件名与模块名不一致 |
-| UNDRIVEN | 有声明无驱动的信号 |
-| UNUSED | 有定义无使用的信号 |
-| MULTIDRIVEN | 一根信号多处驱动 |
-| LATCH | 行为建模推出了锁存器（规范红线 3 的信号） |
-| CASEINCOMPLETE | case 分支没覆盖全且无 default |
-| COMBDLY | 组合逻辑里用了非阻塞赋值 |
-| BLKSEQ | 时序块里用阻塞赋值（模板体系下少见） |
-| ALWCOMBORDER | always_comb 里的顺序问题 |
+| `--top-module <topname>` | 指定顶层模块名 |
+| `--top <topname>` | --top-module 的别名 |
+| `--pins-bv <bits>` | 指定顶层端口在 C++ 侧的类型上限（端口类型见 fundamentals/01） |
 
-注错见红（批 3 判据）：故意留未驱动信号，UNDRIVEN 必须出现。
+### 2.3 预处理与编译传参
 
-## 5 两态初值
+| 选项 | 作用 |
+| --- | --- |
+| `-D<var>[=<value>]` | 定义预处理宏 |
+| `-I<dir>` | 头文件搜索目录 |
+| `-CFLAGS <flags>` | 传给 C++ 编译器的参数（进生成的 makefile） |
+| `-LDFLAGS <flags>` | 传给链接器的参数 |
+| `-E` | 只做预处理，不编译 |
 
-| 选项 | 作用 | 依据 |
-| --- | --- | --- |
-| `--x-initial <策略>` | 未初始化变量的初值策略（unique=尽量随机以暴露未复位；allN/0 等） | guide |
-| `--x-assign <策略>` | 对模型内 x 赋值的处理策略 | guide |
+### 2.4 lint 与警告
 
-主线用法：不复位的 bug 要靠 unique 的随机初值暴露——这也是"时序电路必须先复位"（教程 3.2 节 reset(10)）的机制级理由。两态四态总述见 00-仿真器的两种范式与工具谱系。
+| 选项 | 作用 |
+| --- | --- |
+| `-Wall` | 打开全部风格类警告 |
+| `-Wno-<message>` | 关闭一类警告 |
+| `-Werror-<message>` | 把一类警告升级为错误 |
+| `-Wwarn-<message>` | 打开指定的一类警告 |
+| `-Wfuture-<message>` | 未知警告名的处理（跨版本兼容用） |
+| `-Wno-fatal` | 警告不再致命（照常生成） |
+| `-Wno-lint` | 关闭全部 lint 类警告 |
+| `-Wno-style` | 关闭全部风格类警告 |
+
+警告默认致命（不走 -Wno-fatal 就因警告失败）。逐条警告的成因查在线指南的 Errors and
+Warnings 章（按 5.054 写，多数条目两版一致；敏感条目以实测为准）。
+
+### 2.5 波形
+
+| 选项 | 作用 |
+| --- | --- |
+| `--trace` | 生成 VCD 波形 |
+| `--trace-vcd` | 生成 VCD 波形（显式写法） |
+| `--trace-fst` | 生成 FST 波形 |
+| `--trace-depth <levels>` | 记录的层次深度 |
+| `--trace-max-array <depth>` | 记录数组的最大深度 |
+| `--trace-max-width <width>` | 记录信号的最大位宽 |
+| `--trace-params` | 记录参数 |
+| `--trace-underscore` | 记录下划线开头的信号 |
+| `--trace-structs` | 记录结构体名 |
+| `--trace-saif` | 生成 SAIF 文件 |
+| `--trace-coverage` | 记录覆盖率相关信号 |
+
+### 2.6 时序与断言
+
+| 选项 | 作用 |
+| --- | --- |
+| `--timing` | 打开延迟（#）支持 |
+| `--no-timing` | 关闭延迟支持 |
+| `--no-assert` | 关闭全部断言（断言默认启用） |
+| `--no-assert-case` | 关闭 unique/priority-case 断言 |
+| `--assert-unroll-limit <iter>` | SVA 断言重复次数上限 |
+| `--autoflush` | 每次 $display 后刷新流缓冲 |
+
+### 2.7 x 值（两态模型怎么安放未初始化）
+
+| 选项 | 作用 |
+| --- | --- |
+| `--x-initial <mode>` | 初始 x 的取值策略 |
+| `--x-assign <mode>` | 运行中 x 赋值的取值策略 |
+| `--x-initial-edge` | 允许初始 x 到 0/1 的跳变当边沿 |
+
+### 2.8 覆盖率
+
+`--coverage` 打开全部；分项有 `--coverage-line`、`--coverage-expr`、`--coverage-fsm`、
+`--coverage-toggle` 等。展开见 [fundamentals/07](07-验证方法学总览.md) 第 2 节。
+
+### 2.9 公开信号（给外部访问内部状态用）
+
+| 选项 | 作用 |
+| --- | --- |
+| `--public` | 把信号标为 public |
+| `--public-depth <level>` | public 到指定模块深度 |
+| `--public-flat-rw` | 全部变量按 public_flat_rw 标注 |
+| `--public-params` | 全部参数按 public 标注 |
+| `--public-ignore` | 忽略代码里的 public 标注 |
+
+DiffTest 要从 C++ 侧读寄存器堆时用到这一组（教程后段再见）。
+
+### 2.10 杂项常用
+
+| 选项 | 作用 |
+| --- | --- |
+| `--quiet` | 最小化附加打印 |
+| `--quiet-build` | 不打印构建进度 |
+| `--stats` | 生成统计文件 |
+| `--threads <threads>` | 模型多线程 |
+| `--converge-limit <loops>` | 组合收敛上限（默认 10000，见 fundamentals/01） |
+| `--help` | 打印帮助 |
+| `--version` | 打印版本 |
+
+**[判]（第 2 节整节）**
+
+1. 产物形态组 12 个选项都在 man 页
+2. 顶层与端口组 3 个选项都在 man 页
+3. 预处理与编译传参组 5 个选项都在 man 页
+4. lint 与警告组 8 个选项都在 man 页
+5. 波形组 11 个选项都在 man 页
+6. 时序与断言组 6 个选项都在 man 页
+7. x 值组 3 个选项都在 man 页
+8. 覆盖率组 2 个选项都在 man 页
+9. 公开信号组 5 个选项都在 man 页
+10. 杂项常用组 7 个选项都在 man 页
+
+## 3 行为探针（实测）
+
+总表只保证"选项存在"。这五条把容易拿不准的行为实测一遍，命令与退出码出自本篇 labs
+的 check.sh（2026-11-14）。
+
+1. `verilator --lint-only good.v`：无警告的模块，退出码 0，无警告输出
+2. `verilator --lint-only badw.v`：把 4 位信号赋给 3 位，默认就触发 WIDTHTRUNC 警告，
+   且警告致命，退出码 1（不用 -Wall，WIDTH 类默认打开）
+3. `verilator --lint-only -Wno-WIDTHTRUNC badw.v`：关闭这一类后退出码 0
+4. `verilator --cc --Mdir 指定目录 good.v`：模型产物出现在指定目录（Vgood.h 等三个文件）
+5. `verilator --cc --trace-fst --Mdir 指定目录 good.v`：--trace-fst 被接受且不影响生成，
+   退出码 0
+
+**[判]**
+
+1. --lint-only 对无警告模块退出码 0 且无警告输出
+2. 宽度不匹配默认触发 WIDTHTRUNC 警告且致命（退出码 1）
+3. -Wno-WIDTHTRUNC 关闭该警告后退出码 0
+4. --Mdir 把模型放进指定目录
+5. --trace-fst 编译探针通过（模型照常生成）
+
+## 4 注错见红
+
+本篇核对的对象是 man 页与命令行为。注错做在 check.sh 的期望上（生产指南坑 24），
+mutate.sh 逐项实跑：
+
+1. 原样对照：一条都不红
+2. 版本期望改成 5.051：第 1 节版本判据变红
+3. 选项表里 --trace-fst 拼成不存在的名字：第 2 节"波形组 11 个选项都在 man 页"变红
+4. 行为探针里 WIDTHTRUNC 的匹配串拼错：第 3 节"宽度不匹配默认触发 WIDTHTRUNC 警告且
+   致命（退出码 1）"变红
+5. 探针命令里 -Wno-WIDTHTRUNC 拼错：第 3 节"-Wno-WIDTHTRUNC 关闭该警告后退出码 0"变红
+6. 探针命令里 --Mdir 拼错：第 3 节两条（--Mdir、--trace-fst 探针）变红
+
+## 依据
+
+| 正文说法 | 依据 |
+| --- | --- |
+| 259 行选项总表、各选项作用 | 5.052 man 页 ARGUMENT SUMMARY 节（check.sh 逐组核对存在性） |
+| 警告默认致命 | 探针 2 实测退出码 1；生产指南坑 7（DECLFILENAME 一节）同结论 |
+| WIDTHTRUNC 默认打开 | 探针 2 实测（未加 -Wall） |
+| -Wno-<message> 关闭单类 | 探针 3 实测退出码 0 |
+| --Mdir、--trace-fst 行为 | 探针 4、5 实测 |
+| 端口类型随 --pins-bv | man 页该行；类型展开见 fundamentals/01 第 2 节 |
+| 覆盖率分项 | man 页；展开见 fundamentals/07 第 2 节 |

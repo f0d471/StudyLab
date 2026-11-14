@@ -15,6 +15,17 @@
 /projects/ysyx/docs/topics/**
 !/projects/ysyx/docs/topics/**/
 !/projects/ysyx/docs/topics/**/*.md
+!/projects/ysyx/docs/topics/**/fig/*.svg
+!/projects/ysyx/docs/topics/Knowledge/labs/**/*.v
+!/projects/ysyx/docs/topics/Knowledge/labs/**/*.sv
+!/projects/ysyx/docs/topics/Knowledge/labs/**/*.c
+!/projects/ysyx/docs/topics/Knowledge/labs/**/*.cpp
+!/projects/ysyx/docs/topics/Knowledge/labs/**/*.h
+!/projects/ysyx/docs/topics/Knowledge/labs/**/*.sh
+!/projects/ysyx/docs/topics/Knowledge/labs/**/*.nxdc
+!/projects/ysyx/docs/topics/Knowledge/labs/**/Makefile
+!/projects/ysyx/docs/topics/Knowledge/labs/**/Makefile.nv
+/projects/ysyx/docs/topics/Knowledge/labs/**/build/
 /toolchains/*
 !/toolchains/README.md
 __pycache__/
@@ -31,6 +42,7 @@ __pycache__/
 !/projects/ysyx/docs/rt-thread-source.json
 !/projects/ysyx/docs/riscv-spec-source.json
 !/projects/ysyx/docs/verilator-guide-source.json
+!/projects/ysyx/docs/sv1800-source.json
 
 $RECYCLE.BIN/
 System Volume Information/

@@ -16,12 +16,14 @@ RT-Thread 来源与版本集中登记在 [rt-thread-source.json](docs/rt-thread-
 
 ## 当前进度
 
-更新：2026-10-19。
+更新：2026-11-14。
 
 - 主工程仍是课程初始工程；NEMU 已实现的指令为 auipc、lbu、sb、ebreak，NPC 仍为空模块和 Hello 示例。
 - 改名后通过平台 Doctor；Windows PowerShell 5.1 入口完成 NEMU 四指令 GOOD TRAP 和 Verilator 官方示例检查，PowerShell 7 入口完成 NVBoard 5 秒图形启动。证据集中登记在 logs/workbench-rename.json。
 - RT-Thread 已完成克隆、Git 连通性与干净状态核对；本轮未新增依赖（环境已有 scons）；未执行 make init、未编译或运行。context.c 中课程要求填写的断言占位保留。
 - 2026-10-19：建立二周目学习记录结构——docs/topics/ 下 Engineering（Todo / Bugs / TechReports）与 Knowledge（tutorials / fundamentals / labs），总路线在 Engineering/Todo/学习与项目路线.md；RISC-V 官方手册（合并版 riscv-spec.pdf）已下载到 docs/sources/riscv/ 并登记来源。主线尚未开课。
+- E4（仿真与验证）：批 0 环境四查完成（2026-11-12，记录在 docs/topics/Knowledge/labs/E/04-仿真与验证/00-环境四查.md）。批 1 资产定稿（2026-11-13）：教程第 01 章「Verilator 把电路变成程序」check.sh 82 PASS / 0 FAIL / 0 SKIP、mutate.sh 25 OK / 0 BAD；fundamentals 01「Verilator 模型与 eval」check.sh 91 PASS / 0 FAIL / 0 SKIP、mutate.sh 16 OK / 0 BAD。批 1 的学习检验未做，npc 里的双控开关与 testbench 未写。
+- E4 资产线 2026-11-14 批量推进：教程第 02 章（波形一键仿真与另一种仿真器，check 13 / 0、mutate 10 OK）、第 03 章（接入NVBoard流水灯与静态检查，check 20 / 0、mutate 11 OK）、第 04 章（描述电路的纪律与两个模板，check 6 / 0、mutate 7 OK）；fundamentals 00（11 / 0、7 OK）、02（17 / 0、6 OK）、05（6 / 0、5 OK）、06（12 / 0、9 OK）、07（地图型引用核对制，21 / 0、6 OK）。旧整篇教程与全部素材稿已删除，RTL 仿真段资产齐备；七篇新资产的独立审稿待补（子代理限额 17:14 重置后跑）。批 1 学习检验仍未做。
 - 完整 CPU、NPC 差分链路、操作系统和后续课程单元尚未完成；旧工程的验收不能计入本工程进度。
 
 ## 日常入口

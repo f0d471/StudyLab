@@ -1,119 +1,179 @@
 # 06 Reg 与 MuxKey 模板逐行拆
 
-    实验    批 4：流水灯重构为 Reg 实例 + 四问作答（labs/E/04 回填）
-    依据    讲义 2607 版 E4「若干代码风格和规范」节模板原文；
-            IEEE 1364-2005 第 9/11 章（过程赋值/事件模型，四问作答的出处）。
-            教程引用处：tutorials/E/04 4.2、4.4 节
+    实验目录    labs/fundamentals/06-Reg与MuxKey模板逐行拆/
+    基线        check.sh 12 PASS / 0 FAIL / 0 SKIP；mutate.sh 9 OK / 0 BAD（2026-11-14 沙箱实跑）
+    环境        沙箱 Ubuntu；Verilator 5.052 2026-09-05 rev 5.052-983a06a
+    依据        讲义「若干代码风格和规范」小节的模板原文（labs/tpl.v 一字未改）；
+                行为全部来自本篇 lab 实测
 
-这一篇把讲义给的两个官方模板逐行拆开。模板的地位：初学者不写 always（规范），触发器和选择器全部靠实例化这两个模板描述电路。拆开不是为了让你写这类代码，而是让你用的时候知道脚下是什么、并给批 4 的四问作答垫底。
+**读前须知**：本篇拆讲义给的两个官方模板。读它之前需要：触发器和多路选择器是什么
+（ gfx2d 线与第 03 章的流水灯都见过）；教程第 04 章讲了"为什么初学者不写 always、
+用模板描述电路"，本篇回答"模板里面到底是什么"。模板逐行拆的意义在于使用得放心：
+两条使用注意（参数错位、键值重复）的后果本篇都实测给你看。
 
 ## 你会在哪里撞见它
 
-- 批 4：流水灯的 always 版参考实现重构为 Reg 实例
-- 之后所有阶段的时序部件：D8 的 NPC 里寄存器堆、PC 全是 Reg 实例
-- 选择器：译码器（E5 的 IDU）全是 MuxKey 实例
+1. 教程第 04 章的重构练习：把行为建模换成模板实例，来本篇查模板的端口和参数
+2. 以后 NPC 的寄存器堆、PC、译码器全是这两个模板的实例
+3. 某次 MuxKey 输出"莫名其妙不对"时：先查本篇第 3 节的两条注意
 
 ## 这篇要回答的问题
 
-1. Reg 模板内部那个 always 为什么合规？实例化参数怎么对应电路？
-2. MuxKey 的 lut 打包格式是什么？内部用"或运算阵列"怎么实现键值匹配？
-3. 两个使用注意（参数匹配、键值互异）为什么是真约束而不是仪式？
+1. Reg 模板内部那六行 always 在做什么？复位、保持、采样各是什么行为？
+2. MuxKey 的 lut 怎么切？命中怎么选数？不命中输出什么？
+3. 讲义警告的两条使用注意（参数错位、键值重复），实测后果是什么？
 
-## 1 Reg 模板逐行
+## 1 Reg 模板：六行 always 的三个行为
+
+模板原文（labs/tpl.v，讲义一字未改）：
 
 ```verilog
-module Reg #(WIDTH = 1, RESET_VAL = 0) (   // 两个参数：位宽、复位值，均有默认
+module Reg #(WIDTH = 1, RESET_VAL = 0) (
   input clk,
-  input rst,                               // 同步复位（posedge clk 采样）
-  input  [WIDTH-1:0] din,                  // 数据输入
-  output reg [WIDTH-1:0] dout,             // 数据输出（reg：always 内赋值所需类型）
-  input wen                                // 写使能
+  input rst,
+  input [WIDTH-1:0] din,
+  output reg [WIDTH-1:0] dout,
+  input wen
 );
-  always @(posedge clk) begin              // 时序语义：clk 上升沿触发
-    if (rst)      dout <= RESET_VAL;       // 复位：装默认值
-    else if (wen) dout <= din;             // 使能有效：采样输入；无效则保持（不写 else 保持）
+  always @(posedge clk) begin
+    if (rst) dout <= RESET_VAL;
+    else if (wen) dout <= din;
   end
 endmodule
 ```
 
-要点：
+逐行读：参数 WIDTH 定位宽、RESET_VAL 定复位值，都有默认。always 块只在 clk 上升沿
+执行；执行时三选一：rst 有效就装入 RESET_VAL；否则 wen 有效就采样 din；两者都不有效
+时一行都不执行，dout 保持。`output reg` 的 reg 是"能在 always 里赋值"的类型名，
+和"寄存器"是两回事（第 03 章流水灯的 output reg led 同理）。
 
-1. 这是**唯一允许的 always 形态**：posedge 单事件 + 非阻塞赋值 + 无锁存器结构（rst/wen 两分支覆盖全部情况，dout 每沿必被赋值或保持）。规范禁的是"初学者随手写行为建模"，模板内部是讲义审查过的例外。
-2. 电路对应：一个 N 位 D 触发器组 + 复位逻辑 + 使能门。
-3. 实例化（讲义示例）：
+三个行为实测（tb_reg.cpp，4 位、复位值 5，本机实测输出）：
 
-```verilog
-Reg #(1, 1'b1) i0 (clk, rst, in[0], out[0], 1'b1);  // 1 位，复位值 1，写使能恒 1（每拍都采）
-Reg #(3, 3'b0) i1 (clk, rst, in[3:1], out[3:1], out[0]);  // 3 位，复位 0，使能是另一根信号
+```text
+after reset: dout=5      复位装入 RESET_VAL
+wen=0 din=a: dout=5      使能无效：din 变了也不采，保持
+wen=1 din=a: dout=a      使能有效：采样 din
+wen=0 din=3: dout=a      采到的值在下一拍继续保持
+reset again: dout=5      运行中再复位，回到 RESET_VAL
 ```
 
-端口按位置连接，参数 #(...) 在前。
+**[判]**（对应 check.sh 第 1 节）
 
-## 2 MuxKey 模板逐行
+1. 复位后 dout 等于 RESET_VAL（5）
+2. wen=0 时保持（din 变了也不采）
+3. wen=1 时采样 din
+4. 采到的值在下拍保持
+5. 运行中再复位回到 RESET_VAL
+
+## 2 MuxKey：lut 怎么切，命中怎么选
 
 ### 2.1 使用面
 
-```verilog
-MuxKeyWithDefault #(NR_KEY, KEY_LEN, DATA_LEN) 实例名 (
-  out, key, default_out,
-  {
-    键值0, 数据0,
-    键值1, 数据1,
-    ...
-  }
-);   // 不带默认值的 MuxKey 则少一个 default_out 端口
-```
-
-lut 是一个大拼接位串：`NR_KEY * (KEY_LEN + DATA_LEN)` 位，每对 (键, 数据) 依序首尾拼接。
-
-### 2.2 内部（MuxKeyInternal）
+实例化时给三个参数（键值对数量 NR_KEY、键位宽 KEY_LEN、数据位宽 DATA_LEN），把
+(键, 数据) 对依次拼进 lut：
 
 ```verilog
-module MuxKeyInternal #(NR_KEY = 2, KEY_LEN = 1, DATA_LEN = 1, HAS_DEFAULT = 0) (
-  output reg [DATA_LEN-1:0] out,
-  input [KEY_LEN-1:0] key,
-  input [DATA_LEN-1:0] default_out,
-  input [NR_KEY*(KEY_LEN + DATA_LEN)-1:0] lut
-);
-  localparam PAIR_LEN = KEY_LEN + DATA_LEN;          // 每对 (键,数据) 的位宽
-  wire [PAIR_LEN-1:0]        pair_list [NR_KEY-1:0]; // 切开的每对
-  wire [KEY_LEN-1:0]         key_list  [NR_KEY-1:0]; // 每对的键
-  wire [DATA_LEN-1:0]        data_list [NR_KEY-1:0]; // 每对的数据
-  genvar n;
-  generate
-    for (n = 0; n < NR_KEY; n = n + 1) begin         // 展开期循环：硬件批量生成，不是运行时
-      assign pair_list[n] = lut[PAIR_LEN*(n+1)-1 : PAIR_LEN*n];  // 从大位串切下第 n 对
-      assign data_list[n] = pair_list[n][DATA_LEN-1:0];          // 低段是数据
-      assign key_list[n]  = pair_list[n][PAIR_LEN-1:DATA_LEN];   // 高段是键
-    end
-  endgenerate
-  reg [DATA_LEN-1:0] lut_out;
-  reg hit;
-  integer i;
-  always @(*) begin                       // 组合逻辑（模板内部允许；仍是初学者禁区）
-    lut_out = 0; hit = 0;
-    for (i = 0; i < NR_KEY; i = i + 1) begin
-      lut_out = lut_out | ({DATA_LEN{key == key_list[i]}} & data_list[i]);
-      // key 命中第 i 对时，{DATA_LEN{1}} 全 1，选出该对数据；不中则全 0，或运算不干扰
-      hit = hit | (key == key_list[i]);   // 记录是否命中过任一对
-    end
-    if (!HAS_DEFAULT) out = lut_out;                      // 无默认：不中则 out=0
-    else out = (hit ? lut_out : default_out);             // 有默认：不中取 default_out
-  end
-endmodule
+MuxKeyWithDefault #(3, 2, 4) m1 (y_def, key, 4'hf, {
+  2'b00, 4'h1,
+  2'b01, 4'h2,
+  2'b10, 4'h4
+});
 ```
 
-机制一句话：**把"等值比较"乘到数据上再按位或**——每个键一个比较器，命中选出该对数据，全部或起来。这就是 N 选一选择器的硬件本质，等价于 case 语句综合出的结构。
+### 2.2 内部机制
 
-### 2.3 使用两注意（讲义原文的两条，都是真约束）
+MuxKeyInternal 分两段：
 
-1. 参数必须与信号宽度一致：NR_KEY/KEY_LEN/DATA_LEN 与 lut 拼接的位数不符，切分错位，结果错——而且 MuxKeyInternal 内部没写位宽检查，错位不报错，直接输出错值
-2. 键值必须互异：同键命中多对时 lut_out 是多对数据的按位或——未定义结果。硬件不帮你查重
+1. 编译期的 generate 循环：把 lut 这条大位串按每对 (KEY_LEN + DATA_LEN) 位切开，
+   低段是数据、高段是键。这是展开期的批量生成，产出的是 wires，每对一组
+2. 运行期的组合 always：对每一对做"比较后相与再相或"。`{DATA_LEN{key == key_list[i]}}`
+   在命中时是全 1，选出该对数据；不命中是全 0，或运算不影响别人。全部或完，命中的
+   数据就到了 lut_out。hit 记录是否有任何一对命中，带默认值的版本用它决定不命中时
+   输出 0 还是 default_out
 
-### 2.4 讲义示例对照
+选 4 选 1 选择器不用背机制，记住机制的一句话版本：每个键一个比较器，命中选数，
+全或起来。
 
-mux21（2 选 1）与 mux41（4 选 1）见 tutorials/E/04 或讲义原文；读法：先数键值对、再验证参数、最后对 lut 拼接逐对点名。
+### 2.3 实测
 
-## 3 与四问的接口
+tb_mux.cpp 对同一个 key 驱动四个探针（本机实测）：
 
-模板内部有 always @(*)、generate、for——它们为什么合规而你的 always 不合规，正是批 4 事件模型四问要回答的：generate for 是**展开期**批量生成硬件（结构化），always @(*) 是**描述组合逻辑的约束**而非过程式编程。四问作答进 tutorials/E/04 4.3 节。
+```text
+key=0 plain=1 def=1 dup=1 mis=1
+key=1 plain=2 def=2 dup=6 mis=0
+key=2 plain=4 def=4 dup=0 mis=2
+key=3 plain=0 def=f dup=0 mis=0
+```
+
+plain 列读三件事：三个键各选对数据（1、2、4）；key=3 不命中，MuxKey 输出 0 而
+MuxKeyWithDefault 输出默认值 f。dup 列见第 3 节，mis 列见第 3 节。
+
+**[判]**（对应 check.sh 第 2 节）
+
+1. 三个键各自选出对应的数据（1、2、4）
+2. 不命中：MuxKey 输出 0，MuxKeyWithDefault 输出默认值 f
+
+## 3 两条使用注意的实测后果
+
+讲义要求使用者保证两条：参数与实际一致、键值互异。违反了会怎样，本篇实测。
+
+### 3.1 键值重复：输出是按位或
+
+dup 探针的 lut 里放了两个 2'b01（数据分别是 2 和 4）。key=1 时两对同时命中，
+`2 | 4 = 6`，实测输出 6；原本想用的 2'b10 键已经不在表里，key=2 落空输出 0。
+结果未定义的意思就是：你拿不到任何可以依赖的值。
+
+### 3.2 参数错位：位宽恰好相等时静默出错
+
+mis 探针把同一份 18 位 lut 按 (3 位键, 3 位数据) 去声明。每对 6 位、三对共 18 位，
+总位宽和 (2, 4) 版恰好一样，于是没有任何宽度警告，构建日志干净。但切出来的表变了：
+按 3 位键去比 2 位的 key（补零成 3 位），key=1 补成 001，表里的键是 000、010、100，
+比不中，输出 0；key=0 与 key=2 恰好撞上 000 和 010，输出 1 和 2。对照第 2.3 节：
+预期的 1、2、4 变成了实测的 1、0、2。位宽不等的错位（比如声明两对实际拼三对）会被
+WIDTH 类警告拦下（mux_bad.v 实测，默认致命）；恰好相等的错位没人拦，只能靠人保证。
+
+**[判]**（对应 check.sh 第 3 节）
+
+1. 键值重复时输出是两份数据的按位或（6），原键 10 落空（0）
+2. 参数错位（位宽恰好相等）：不报警告，key=1 与 key=2 的输出和预期不符
+3. 上一条的构建日志里没有任何警告（静默成立）
+4. 对数声明不符被 WIDTH 类警告拦下（默认致命）
+
+## 4 模板里的 always 为什么合规
+
+教程第 04 章要求初学者不写 always，模板里却有两个。它们合规的理由：
+
+1. Reg 的 always：posedge 单事件、非阻塞赋值、分支覆盖（rst 与 wen 两个条件把
+   "赋值还是保持"说全了），不会推出锁存器。这是标准的同步时序描述
+2. MuxKeyInternal 的组合 always：描述的是一张查表（组合逻辑），不是时序；
+   `always @(*)` 是"本块是组合逻辑"的声明，配合块内每个分支都给 out 赋值
+
+模板是被讲义背书的例外：使用者通过实例化获得这两个电路，不自己动手写过程描述。
+标准里这两类块的调度位置（NBA 区更新、组合在活动区求值）见
+[fundamentals/00](00-仿真器的两种范式与工具谱系.md) 第 1 节与标准 4.9。
+
+## 5 注错见红
+
+mutate.sh 实跑的九项：
+
+1. 原样对照：一条都不红
+2. 版本期望改成 5.051：环境判据变红
+3. 探针的复位值改成 0：第 1 节"复位后等于 RESET_VAL""wen=0 保持""再复位"三条变红
+   （保持的值就是复位值，跟着复位值一起变）
+4. 采样拍的 wen 改成 0：第 1 节"采样""下拍保持"两条变红
+5. lut 里的数据 4 改成 5：第 2 节"三个键各选对"变红
+6. 默认值 f 改成 0：第 2 节"默认值 f"变红
+7. 重复键改回唯一：第 3 节"按位或"变红
+8. 错位探针的输出位宽改坏：整个 mux_top 构建被 WIDTH 警告拦下，第 2、3 节五条变红
+9. 坏版对数修好：第 3 节"WIDTH 拦下"变红
+
+## 依据
+
+| 正文说法 | 依据 |
+| --- | --- |
+| 模板原文 | 讲义「若干代码风格和规范」小节；labs/tpl.v 与讲义逐字一致 |
+| Reg 五个行为 | tb_reg 实测输出（check.sh 第 1 节） |
+| 命中选数、不命中 0 与默认值、重复键按位或 | tb_mux 实测（check.sh 第 2、3 节） |
+| 参数错位静默出错（1、0、2 对预期 1、2、4） | tb_mux 实测；切分推演在正文 3.2 节 |
+| 位宽不符被 WIDTH 拦下 | mux_bad.v 实测（默认致命） |
+| 两类 always 的调度位置 | IEEE 1800-2017 的 4.4 与 4.9（fundamentals/00 第 1 节引） |

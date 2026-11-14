@@ -1,0 +1,12 @@
+{
+  "registeredDate": "2026-11-13",
+  "name": "sv-1800-2017",
+  "description": "IEEE 1800-2017 SystemVerilog 标准全文（LRM）。RTL 仿真与验证的权威裁定来源：事件调度语义（第 4 章，事件队列/delta cycle 的标准定义）、两态四态、断言 SVA（第 16 章）、功能覆盖率（第 19 章；第 18 章是约束随机值生成）",
+  "url": "https://standards.ieee.org/ieee/1800/7743（IEEE GET 计划，官方免费渠道，当前版 1800-2023）",
+  "downloadedFrom": "https://rfsoc.mit.edu/6S965/_static/F25/documentation/1800-2017.pdf（MIT 课程镜像，官方免费发布文档的副本）",
+  "version": "IEEE 1800-2017（1315 页）。现行版为 1800-2023；本库引用一律按 2017 版的条款号",
+  "file": "sources/systemverilog/sv-1800-2017.pdf",
+  "sha256": "12e3dc7bafafca28af2b89ebc2761fb7a606d68716cf04c2d93c8617c78eebec（2026-11-13 计算，文件 15456840 字节）",
+  "usage": "事件调度语义的裁定来源，被 fundamentals 01 与教程 E/04 的依据表引用。常用条款：§4.4 分层调度器（stratified event scheduler，17 个区）、§4.5 参考调度算法、§4.6 确定性、§4.7 非确定性、§4.8 竞争条件、§4.9.1 连续赋值",
+  "notes": "Verilog 1364 已并入 1800（1800-2017 起单一标准），故不另找 1364。git 状态：本地保留，不入库（PDF 15.4MB）"
+}

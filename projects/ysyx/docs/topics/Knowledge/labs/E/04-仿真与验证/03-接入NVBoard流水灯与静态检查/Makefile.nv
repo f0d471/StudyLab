@@ -1,0 +1,54 @@
+# NVBoard 工程的构建规则，仿 nvboard/example/Makefile 缩减而来。
+# 用法（在工程目录里，NVBOARD_HOME 指向一份可写的 NVBoard 副本）：
+#   make -f Makefile.nv TOPNAME=top NXDC=top.nxdc VSRC=top.v CSRC=main_sw.cpp
+# 产物落在 ./build/<顶层名>/ 下：auto_bind.cpp、obj_dir/、可执行文件 <顶层名>。
+
+TOPNAME ?= top
+NXDC    ?= $(TOPNAME).nxdc
+VSRC    ?= $(TOPNAME).v
+CSRC    ?= main_$(TOPNAME).cpp
+
+VERILATOR = verilator
+VERILATOR_CFLAGS += -MMD --build -cc \
+		-O3 --x-assign fast --x-initial fast --noassert
+
+# 每个工程（按顶层名）用自己的构建目录，两个工程的 auto_bind.cpp 互不覆盖
+BUILD_DIR = ./build/$(TOPNAME)
+OBJ_DIR = $(BUILD_DIR)/obj_dir
+BIN = $(BUILD_DIR)/$(TOPNAME)
+
+default: $(BIN)
+
+$(shell mkdir -p $(BUILD_DIR))
+
+# 约束文件 .nxdc 经 auto_pin_bind.py 生成引脚绑定代码
+SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
+$(SRC_AUTO_BIND): $(NXDC)
+	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
+
+CSRCS = $(CSRC) $(SRC_AUTO_BIND)
+
+# NVBoard 的构建规则：把库源码编成 build/nvboard.a，并给出 SDL 的编译链接选项
+include $(NVBOARD_HOME)/scripts/nvboard.mk
+
+# nvboard.mk 只把它的头文件目录追加进 INC_PATH，转成 -I 参数是使用方的职责
+INCFLAGS = $(addprefix -I, $(INC_PATH))
+CXXFLAGS += $(INCFLAGS)
+
+# 顶层模型类叫 V$(TOPNAME)，main 里的 TOP_NAME 宏要用同一个名字
+CXXFLAGS += -DTOP_NAME="\"V$(TOPNAME)\""
+
+$(BIN): $(VSRC) $(CSRCS) $(NVBOARD_ARCHIVE)
+	@rm -rf $(OBJ_DIR)
+	$(VERILATOR) $(VERILATOR_CFLAGS) \
+		--top-module $(TOPNAME) $(VSRC) $(CSRCS) $(NVBOARD_ARCHIVE) \
+		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
+		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
+
+run: $(BIN)
+	@$^
+
+clean:
+	rm -rf $(BUILD_DIR)
+
+.PHONY: default clean run
