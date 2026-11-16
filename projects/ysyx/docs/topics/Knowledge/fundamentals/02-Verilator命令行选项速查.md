@@ -1,13 +1,13 @@
 # 02 Verilator 命令行选项速查
 
     实验目录    labs/fundamentals/02-Verilator命令行选项速查/
-    环境        沙箱 Ubuntu；Verilator 5.052 2026-09-05 rev 5.052-983a06a
+    环境        沙箱 Ubuntu 26.04 LTS；Verilator 5.052 2026-09-05 rev 5.052-983a06a
     依据        man 页（5.052 版，tools/verilator-5.052/share/man/man1/verilator.1 的 ARGUMENT
                 SUMMARY 节，共 259 行选项）；行为探针为本篇 labs 实测。在线指南是 5.054，
                 与所装版本不一致时以 man 页与实测为准
 
-**读前须知**：这是清单型篇目，供查不供读。每组开头一句"这组解决什么问题"，然后是表格。
-表格里每个选项的作用按 man 页转述，选项名都存在于所装版本的
+**读前须知**：这是清单型篇目，供查不供读。按组分表，组名点出这组管什么，个别组开头
+另有一句补充。表格里每个选项的作用按 man 页转述，选项名都存在于所装版本的
 man 页。第 3 节的五条行为探针是实测，不是转述。想系统地走一遍选项怎么用，读教程
 E/04 各章，本篇是它们背后的案头手册。
 
@@ -50,7 +50,8 @@ E/04 各章，本篇是它们背后的案头手册。
 | `--exe` | 链接生成可执行（配合提交给它的 C++ 文件） |
 | `--main` | 自动生成 C++ 的 main() 文件 |
 | `-o <executable>` | 最终可执行文件的名字 |
-| `--Mdir <directory>` | 产物目录名（默认 obj_dir） |
+| `--Mdir <directory>` | 产物目录名（默认 obj_dir，出处见依据表） |
+| `--prefix <topname>` | 顶层类名（类名与文件名不一致的 DECLFILENAME 互动见教程第 01 章） |
 | `-j <jobs>` | 构建并行度（管 --build-jobs 与 --verilate-jobs） |
 | `--build-jobs <jobs>` | 本地编译阶段的并行度 |
 | `--verilate-jobs` | Verilation（生成模型）阶段的并行度 |
@@ -61,7 +62,7 @@ E/04 各章，本篇是它们背后的案头手册。
 | --- | --- |
 | `--top-module <topname>` | 指定顶层模块名 |
 | `--top <topname>` | --top-module 的别名 |
-| `--pins-bv <bits>` | 指定顶层端口在 C++ 侧的类型上限（端口类型见 fundamentals/01） |
+| `--pins-bv <bits>` | 指定顶层端口的类型选择（man 页仅此一句；默认端口类型映射见 fundamentals/01 第 2 节，本选项的阈值行为未实测） |
 
 ### 2.3 预处理与编译传参
 
@@ -70,7 +71,7 @@ E/04 各章，本篇是它们背后的案头手册。
 | `-D<var>[=<value>]` | 定义预处理宏 |
 | `-I<dir>` | 头文件搜索目录 |
 | `-CFLAGS <flags>` | 传给 C++ 编译器的参数（进生成的 makefile） |
-| `-LDFLAGS <flags>` | 传给链接器的参数 |
+| `-LDFLAGS <flags>` | 传给链接器的参数（置于目标文件之前，进生成的 makefile） |
 | `-E` | 只做预处理，不编译 |
 
 ### 2.4 lint 与警告
@@ -112,8 +113,8 @@ Warnings 章（按 5.054 写，多数条目两版一致；敏感条目以实测�
 | `--timing` | 打开延迟（#）支持 |
 | `--no-timing` | 关闭延迟支持 |
 | `--no-assert` | 关闭全部断言（断言默认启用） |
-| `--no-assert-case` | 关闭 unique/priority-case 断言 |
-| `--assert-unroll-limit <iter>` | SVA 断言重复次数上限 |
+| `--no-assert-case` | 关闭 unique/unique0/priority-case 断言 |
+| `--assert-unroll-limit <iter>` | SVA 断言重复次数的上限，超过即报错（man 页原文 Max SVA assertion repetition before erroring；在线 5.054 已标注废弃无效，5.052 行为未实测） |
 | `--autoflush` | 每次 $display 后刷新流缓冲 |
 
 ### 2.7 x 值（两态模型怎么安放未初始化）
@@ -136,7 +137,7 @@ Warnings 章（按 5.054 写，多数条目两版一致；敏感条目以实测�
 | `--public` | 把信号标为 public |
 | `--public-depth <level>` | public 到指定模块深度 |
 | `--public-flat-rw` | 全部变量按 public_flat_rw 标注 |
-| `--public-params` | 全部参数按 public 标注 |
+| `--public-params` | 全部参数按 public_flat 标注 |
 | `--public-ignore` | 忽略代码里的 public 标注 |
 
 DiffTest 要从 C++ 侧读寄存器堆时用到这一组（教程后段再见）。
@@ -147,6 +148,7 @@ DiffTest 要从 C++ 侧读寄存器堆时用到这一组（教程后段再见）
 | --- | --- |
 | `--quiet` | 最小化附加打印 |
 | `--quiet-build` | 不打印构建进度 |
+| `--runtime-debug` | 打开模型运行期调试（构建多 -ggdb、-fsanitize 等选项，运行期检查生效；实测见教程第 01 章第 4.5 节） |
 | `--stats` | 生成统计文件 |
 | `--threads <threads>` | 模型多线程 |
 | `--converge-limit <loops>` | 组合收敛上限（默认 10000，见 fundamentals/01） |
@@ -156,15 +158,15 @@ DiffTest 要从 C++ 侧读寄存器堆时用到这一组（教程后段再见）
 ## 3 行为探针（实测）
 
 总表只保证"选项存在"。这五条把容易拿不准的行为实测一遍，命令与退出码出自本篇 labs
-实测（2026-11-14）。
+实测（2026-11-14，2026-11-16 复跑一致）。
 
 1. `verilator --lint-only good.v`：无警告的模块，退出码 0，无警告输出
 2. `verilator --lint-only badw.v`：把 4 位信号赋给 3 位，默认就触发 WIDTHTRUNC 警告，
    且警告致命，退出码 1（不用 -Wall，WIDTH 类默认打开）
 3. `verilator --lint-only -Wno-WIDTHTRUNC badw.v`：关闭这一类后退出码 0
 4. `verilator --cc --Mdir 指定目录 good.v`：模型产物出现在指定目录（Vgood.h 等三个文件）
-5. `verilator --cc --trace-fst --Mdir 指定目录 good.v`：--trace-fst 被接受且不影响生成，
-   退出码 0
+5. `verilator --cc --trace-fst --Mdir 指定目录 good.v`：--trace-fst 被接受，模型照常
+   生成（产物里多出 trace 相关源文件），退出码 0
 
 ## 依据
 
@@ -175,5 +177,8 @@ DiffTest 要从 C++ 侧读寄存器堆时用到这一组（教程后段再见）
 | WIDTHTRUNC 默认打开 | 探针 2 实测（未加 -Wall） |
 | -Wno-<message> 关闭单类 | 探针 3 实测退出码 0 |
 | --Mdir、--trace-fst 行为 | 探针 4、5 实测 |
-| 端口类型随 --pins-bv | man 页该行；类型展开见 fundamentals/01 第 2 节 |
+| --Mdir 默认 obj_dir | 在线指南 obj_dir 说明（5.054 版"If not specified, obj_dir is used"）；教程第 01 章产物同目录名 |
+| --pins-bv 的转述边界 | man 页该行原文仅"Specify types for top-level ports"一句；默认端口类型映射见 fundamentals/01 第 2 节 |
+| --runtime-debug 与 --prefix | man 页 ARGUMENT SUMMARY 两行；运行期检查的实测在教程第 01 章第 4.5 节 |
+| --assert-unroll-limit 的版本分歧 | 在线指南 5.054 标注 Deprecated and has no effect；5.052 man 页仅 Max SVA assertion repetition before erroring，5.052 行为未实测 |
 | 覆盖率分项 | man 页；展开见 fundamentals/07 第 2 节 |

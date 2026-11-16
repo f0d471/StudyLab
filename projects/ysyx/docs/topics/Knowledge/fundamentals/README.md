@@ -17,11 +17,11 @@
 
 | 篇 | 主题 | 实验 | 被谁引用 | 状态 |
 | --- | --- | --- | --- | --- |
-| [00-仿真器的两种范式与工具谱系](00-仿真器的两种范式与工具谱系.md) | 调度语义与实现方式两个维度、四态两态、竞争条件、工具谱系 | [labs](../labs/fundamentals/00-仿真器的两种范式与工具谱系/) | 教程 E/04 第 02 章 5 节、第 04 章 4 节 | 实验双绿 2026-11-14（check 11 / mutate 7），独立审稿待补 |
+| [00-仿真器的两种范式与工具谱系](00-仿真器的两种范式与工具谱系.md) | 调度语义与实现方式两个维度、四态两态、竞争条件、工具谱系 | [labs](../labs/fundamentals/00-仿真器的两种范式与工具谱系/) | 教程 E/04 第 02 章 5 节、第 04 章 4 节 | 定稿 2026-11-16（check 11 PASS / mutate 7 OK） |
 | [01-Verilator模型与eval](01-Verilator模型与eval.md) | Verilator 生成的模型：产物、端口类型、层次命名、eval 逐区轨迹、静态排序、收敛上限、输入与时钟同拍、延迟与 `--timing` | [labs](../labs/fundamentals/01-Verilator模型与eval/) | tutorials/E/04-仿真与验证/01 第 3、4、8 节 | 定稿 2026-11-13 |
-| [02-Verilator命令行选项速查](02-Verilator命令行选项速查.md) | 选项分组总表（man 页核对）与五条行为探针 | [labs](../labs/fundamentals/02-Verilator命令行选项速查/) | 各章命令行的案头手册 | 实验双绿 2026-11-14（check 17 / mutate 6），独立审稿待补 |
-| [05-波形格式与GTKWave](05-波形格式与GTKWave.md) | VCD 文本结构、时间戳计数、FST 的二进制性质、GTKWave 用法 | [labs](../labs/fundamentals/05-波形格式与GTKWave/) | 教程 E/04 第 02 章 1、2 节 | 实验双绿 2026-11-14（check 6 / mutate 5），独立审稿待补 |
-| [06-Reg与MuxKey模板逐行拆](06-Reg与MuxKey模板逐行拆.md) | 模板内部逐行与两条使用注意的实测后果 | [labs](../labs/fundamentals/06-Reg与MuxKey模板逐行拆/) | 教程 E/04 第 04 章 2 节 | 实验双绿 2026-11-14（check 12 / mutate 9），独立审稿待补 |
-| [07-验证方法学总览](07-验证方法学总览.md) | 验证学科地图（功能与代码覆盖、断言、形式验证、UVM、参考模型、SystemC），地图型判据按引用核对制 | [labs](../labs/fundamentals/07-验证方法学总览/) | E4 spec 知识地图；各章名词定位 | 实验双绿 2026-11-14（check 21 / mutate 6），独立审稿待补 |
+| [02-Verilator命令行选项速查](02-Verilator命令行选项速查.md) | 选项分组总表（man 页核对）与五条行为探针 | [labs](../labs/fundamentals/02-Verilator命令行选项速查/) | 各章命令行的案头手册 | 定稿 2026-11-16（check 17 PASS / mutate 6 OK） |
+| [05-波形格式与GTKWave](05-波形格式与GTKWave.md) | VCD 文本结构、时间戳计数、FST 的二进制性质、GTKWave 用法 | [labs](../labs/fundamentals/05-波形格式与GTKWave/) | 教程 E/04 第 02 章 1、2 节 | 定稿 2026-11-16（check 6 PASS / mutate 5 OK） |
+| [06-Reg与MuxKey模板逐行拆](06-Reg与MuxKey模板逐行拆.md) | 模板内部逐行与两条使用注意的实测后果 | [labs](../labs/fundamentals/06-Reg与MuxKey模板逐行拆/) | 教程 E/04 第 04 章读前须知与第 1、2 节 | 定稿 2026-11-16（check 12 PASS / mutate 9 OK） |
+| [07-验证方法学总览](07-验证方法学总览.md) | 验证学科地图（功能与代码覆盖、断言、形式验证、UVM、参考模型、SystemC），地图型判据按引用核对制 | [labs](../labs/fundamentals/07-验证方法学总览/) | E4 spec 知识地图；各章名词定位 | 定稿 2026-11-16（check 21 PASS / mutate 6 OK） |
 
 编号 01 原为"Verilator 的编译流水"，已由现在的 01 取代；03、04 原为 C++ 类与 Makefile 速查，已删除，编号空缺不复用。地图型篇目（07）的判据是引用核对（标准书签摘录、man 页、登记的外部链接），其余篇目的判据是沙箱实验，两者都出自生产指南。

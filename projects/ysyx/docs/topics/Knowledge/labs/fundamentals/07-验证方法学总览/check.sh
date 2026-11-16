@@ -7,7 +7,8 @@
 # 工具声明对着 man 页核对，标准 PDF 完整性用登记的 sha256 核对，
 # 外部链接的登记行对着正文核对（链接可达性由生产者经 WebFetch 核对，状态写在正文里）。
 # 各节标题里的"第 N 节"就是正文的小节号。
-# 正文第 9 节"注错见红"写的改坏由同目录的 mutate.sh 逐项实跑（改的是本脚本的期望值）。
+# 改坏必红的核对由 mutate.sh 逐项实跑（改的是本脚本的期望值，期望清单登记在
+# mutate.sh 的参数里，正文不写注错）。
 
 cd "$(dirname "$0")" || exit 1
 
@@ -94,10 +95,10 @@ if grep -qE '^4\. Scheduling semantics' <<< "$TOCTXT"; then ok '调度语义是�
 if grep -qE '^  4\.5 SystemVerilog simulation reference algorithm' <<< "$TOCTXT"; then ok '参考算法在 4.5'; else no '参考算法在 4.5' '书签摘录里没有 4.5'; fi
 
 echo "=== 第 7 节 SystemC/TLM ==="
-if grep -qE 'https://www\.accellera\.org' <<< "$CHTXT"; then
+if grep -qE 'https://www\.accellera\.org' <<< "$CHTXT" && grep -qE '未能核对' <<< "$CHTXT"; then
 	ok '正文登记了 Accellera 站点入口，并标明未能核对'
 else
-	no '正文登记了 Accellera 站点入口，并标明未能核对' '正文里找不到登记行'
+	no '正文登记了 Accellera 站点入口，并标明未能核对' '正文里找不到登记行或核对状态标注'
 fi
 
 echo

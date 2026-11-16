@@ -1,8 +1,9 @@
 # 03 接入 NVBoard、流水灯与静态检查
 
     实验目录    labs/E/04-仿真与验证/03-接入NVBoard流水灯与静态检查/
-    环境        沙箱 Ubuntu；Verilator 5.052 2026-09-05 rev 5.052-983a06a；
+    环境        沙箱 Ubuntu 26.04 LTS；Verilator 5.052 2026-09-05 rev 5.052-983a06a；
                 NVBoard（workbench 内置副本）；SDL2 2.32.10
+                本章的输出、退出码均为 2026-11-14 在沙箱里实跑，2026-11-16 复跑判据全绿
     对应讲义    2607 版 E4「接入NVBoard」「示例: 流水灯(时序逻辑电路)」「静态代码检查」
                 三小节
 
@@ -13,7 +14,7 @@
 2. 波形与 make（第 02 章）：本章的构建照搬同样的结构，多接一个 NVBoard 库
 3. lint 的警告分级（第 01 章 DECLFILENAME 一节）：本章第 4 节系统化
 
-板上可视行为由学员当面确认（生产指南的规定）：机器只核到"构建成功 + 无头运行
+板上可视行为由学员当面确认：机器只核到"构建成功 + 无头运行
 健康"为止。本章用了 SDL_VIDEODRIVER=dummy 让程序无头跑起来验证主循环不崩，窗口里
 的画面要靠学员看。
 
@@ -24,8 +25,8 @@
 
 往后 NPC 的所有外设实验（蜂鸣器、数码管、VGA）都长在 NVBoard 上，
 接不进去就没有以后；时序电路不复位的坑（第 3.3 节实测给你看）会在真项目里以"灯
-全灭、查不出原因"的形态出现；不开 lint 的代价在第 02 章已经量过（两态下位宽截断
-不报运行错），本章把工具链配齐。
+全灭、查不出原因"的形态出现；静态检查本章现场配齐：三类常见问题在编译期就有警告
+可抓（第 4 节逐类实测）。
 
 ## 0 起点
 
@@ -37,7 +38,7 @@
 3. 代码越写越多，能不能在编译期就抓住一批错误？
 
 读完本章你要能解释：约束文件的三行字怎么变成 C++ 里的绑定调用；`single_cycle` 里
-两次 eval 各干什么；复位改成不复位，流水灯会发生什么（实测答案：灯永远不亮）；
+两次 eval 各干什么；复位改成不复位，流水灯会发生什么；
 `-Wall` 下哪些警告默认就开、哪些要它才开。
 
 ## 1 NVBoard 三件套怎么建立联系
@@ -46,11 +47,13 @@
 
 讲义给的读法是"从 make 命令开始，看看一切是如何发生的"。NVBoard 官方示例的
 Makefile 值得通读；本篇 labs 里的 Makefile.nv 是它的缩减版，把三件套的关系收在
-五十行内。从上往下读：
+五十四行。从上往下读：
 
 1. 顶层与源文件由变量给出（TOPNAME、VSRC、CSRC）
-2. 约束文件 .nxdc 经一条规则变成 C++：`python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py 约束 产物`。
-   这就是把"端口名对板卡元件"的声明翻译成绑定代码的机器
+2. 约束文件 .nxdc 经一条规则变成 C++：
+   `python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@`（`$^` 是规则的全部依赖，
+   这里即约束文件；`$@` 是规则的目标，这里即生成的绑定文件）。这就是把"端口名对
+   板卡元件"的声明翻译成绑定代码的机器
 3. `include $(NVBOARD_HOME)/scripts/nvboard.mk`：NVBoard 是库不是框架。它提供两条
    规则：把 src/ 下全部源码编成 build/nvboard.a 归档，以及 SDL2 的编译链接选项。
    它只把头文件目录追加进 INC_PATH，转成 -I 参数是使用方的职责（example 里有这行，
@@ -85,19 +88,36 @@ nvboard_bind_pin( &top->f, 1, LD0);
 
 ### 2.1 [做 L2] main 换成板卡驱动
 
-接 NVBoard 的 main（main_sw.cpp 全文在 labs）与第 01 章的 testbench 骨架同构，差别
-在输入输出走板卡：
+接 NVBoard 的 main 与第 01 章的 testbench 骨架同构，差别在输入输出走板卡。labs 里的
+main_sw.cpp 全文：
 
 ```cpp
-nvboard_bind_all_pins(&dut);   // 执行 auto_bind.cpp 生成的绑定
-nvboard_init();                // 起板卡窗口
-while (1) {
-  nvboard_update();            // 板卡界面 <-> 模型端口 双向同步
-  dut.eval();                  // 求值
+#include <nvboard.h>
+#include <Vtop.h>
+
+static TOP_NAME dut;
+
+void nvboard_bind_all_pins(TOP_NAME* top);
+
+int main() {
+  nvboard_bind_all_pins(&dut);
+  nvboard_init();
+
+  while (1) {
+    nvboard_update();
+    dut.eval();
+  }
 }
 ```
 
-`nvboard_update` 每圈把开关状态写进绑定的输入端口、把输出端口的值刷到 LED。构建
+与第 01 章的 testbench 相比多了三处：`nvboard_bind_all_pins(&dut)` 执行 auto_bind.cpp
+生成的绑定；`nvboard_init()` 起板卡窗口；循环里每圈先调 `nvboard_update()` 再
+`eval()`。
+
+`nvboard_update` 管界面这一侧：它按帧率节流（每秒 FPS 次），读输入事件、把输出端口
+的值刷到 LED 这类元件上。开关的输入不经过它：你在窗口里点一下开关，NVBoard 的事件
+处理当场经 `pin_poke` 把新状态写进绑定的模型端口（auto_bind 绑的就是这个地址），
+下一次 `eval()` 就用上了。构建
 （make -f Makefile.nv，产物 build/top/top）后无头验证：SDL_VIDEODRIVER=dummy 下跑
 3 秒仍活着（timeout 收掉时返回 124），说明主循环健康。真窗口里拨 SW0/SW1，LD0 按
 异或亮灭，这半句要学员当面确认。
@@ -131,12 +151,12 @@ endmodule
 
 ### 3.2 testbench 造时钟与复位
 
-main_light.cpp 里两个仿真原语（讲义伪代码的落地）：
+main_light.cpp 里两个仿真原语（讲义伪代码的落地，labs 原文）：
 
 ```cpp
 static void single_cycle() {
   dut.clk = 0; dut.eval();
-  dut.clk = 1; dut.eval();      // 0 到 1 的跳变就是上升沿
+  dut.clk = 1; dut.eval();
 }
 static void reset(int n) {
   dut.rst = 1;
@@ -145,6 +165,7 @@ static void reset(int n) {
 }
 ```
 
+`single_cycle` 先把 clk 摆 0、再把 clk 摆 1，各自 eval 一次：0 到 1 的跳变就是上升沿。
 仿真器里没有天生的时钟：clk 只是模型上的一个成员，你把它从 0 改成 1 再 eval，
 沿就造出来了。复位 10 拍是惯例量，作用见下一小节的对照实验。
 
@@ -164,8 +185,11 @@ step 2:     led=0008 count=1       step 2:     led=0000 count=1
 不复位的分支里，led 的初值是 0（两态模型的默认初值），把 0 移位一万次还是 0：
 灯永远不亮。这就是"时序电路必须复位"的机制级解释：复位给状态一个确定的起点，
 没有它，电路的行为取决于初值，而两态模型里初值默认全 0，恰好把"该亮的第 0 号灯"
-也熄灭了。正常分支还能看出分频节拍：复位后第一拍 led 从 0001 移到 0002，此后每
-5000001 拍移一位（0004、0008），肉眼可见的"流动"就是这个节拍。
+也熄灭了。正常分支还能看出分频节拍：复位后第一拍 led 从 0001 移到 0002，此后 tb_light
+每跑 5000001 拍，led 恰好多移一位（0004、0008，每步结束时 count 都回到 1）。5000001
+这样数出来：移位发生在 count==0 的那一拍，同一拍 count 装进 1；接下来 count 从 1
+一路加到 5000000 要走 4999999 拍，数满的下一拍归零，归零后的下一拍 count 又是 0、
+再移一次。两次移位之间恰是 4999999+1+1=5000001 拍，肉眼可见的"流动"就是这个节拍。
 
 ## 4 静态检查：把 lint 用成纪律
 
@@ -187,14 +211,15 @@ labs 里三个小文件各埋一类问题，实测（5.052）：
    修法：用上它，或删掉
 3. 位宽截断（lint_width.v）：4 位赋给 3 位。报
    `Warning-WIDTHTRUNC: ... expects 3 bits ... generates 4 bits`，并且不开 `-Wall`
-   也报（第 02 章已实测过它默认开）。修法：把位宽对齐（lint_clean.v 就是对齐版，
+   也报（默认开，见已知的坑第 4 条）。修法：把位宽对齐（lint_clean.v 就是对齐版，
    `-Wall` 零警告）
 
 三类修完的对照：lint_clean.v 在 `-Wall` 下退出码 0、无诊断行。
 
 处置分级照讲义：代码逻辑类的警告改代码消除；确认不影响逻辑的风格类才用
-`-Wno-<类别>` 单独关。总开着 lint 的理由在第 02 章量过：两态模型里位宽截断不报
-运行错，唯一能在编译期拦住它的就是这条警告。
+`-Wno-<类别>` 单独关。总开着 lint 的理由第 4.2 节的实测本身就给了：三类问题都能在
+编译期抓住，其中位宽截断语法上完全合法，编译期唯一的拦截点就是这条默认就开、默认
+致命的警告，把它 `-Wno-` 掉，这类代码就一路编过进到仿真里了。
 
 ## 回看
 
@@ -242,7 +267,8 @@ testbench 并解释每一拍；用对照实验证明复位的必要性；把 lin
 | 三件套关系与 nvboard.mk 的职责 | nvboard/scripts/nvboard.mk 原文；Makefile.nv 构建实测 |
 | auto_bind.cpp 的三行绑定 | labs build/top/auto_bind.cpp 原文 |
 | main_sw/main_light 的循环结构 | labs 文件；无头运行 timeout 124 实测 |
-| 复位后 0001、逐拍移位、不复位恒 0000 | tb_light 实测输出（含 5000001 拍的由来推导） |
+| 点开关经 pin_poke 直写绑定端口，nvboard_update 按帧率节流刷新界面 | nvboard/src/event.cpp（mousedown 调 pin_poke）、src/nvboard.cpp（diff > 1000000/FPS 分支）、include/pins.h（pin_poke 写绑定的地址） |
+| 复位后 0001、每 5000001 拍移一位、不复位恒 0000 | tb_light 实测输出（build/tl.run）；5000001 的推导在第 3.3 节 |
 | light.v 在 -Wall 下零警告 | labs 实测 |
 | 三类警告的文本与默认开关状态 | labs 实测：UNDRIVEN/UNUSEDSIGNAL 需 -Wall，WIDTHTRUNC 默认开 |
 | 讲义对警告分级处置的要求 | 讲义「静态代码检查」小节（任务框） |

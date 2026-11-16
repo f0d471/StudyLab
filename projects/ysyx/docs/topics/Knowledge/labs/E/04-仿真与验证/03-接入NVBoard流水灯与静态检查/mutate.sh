@@ -3,8 +3,8 @@
 #
 # 用法：在沙箱里 bash mutate.sh（每项完整跑一遍 check.sh；NVBoard 库副本在各项之间
 # 复用 /tmp 里的已编版本，本机共约 15 分钟）
-# 正文各节 [判] 块末尾的"注错见红"写了改坏哪里、哪几条判据变红。本脚本逐项实跑核对。
-# 第一项"原样"是对照：一条都不能变红。
+# 每项改坏一处源码，重跑 check.sh，期望变红的判据清单写在本项末尾参数里。本脚本
+# 逐项实跑核对。第一项"原样"是对照：一条都不能变红。
 # 产物在 build/mut/；check.sh 开头清空 build/ 时会一起删掉，两个脚本不要同时跑。
 
 cd "$(dirname "$0")" || exit 1
@@ -30,9 +30,9 @@ mut() {
 	got=$(grep '^  FAIL  ' "$d/run.log" | sed 's/^  FAIL  //' | sort)
 	if [ $# -eq 0 ]; then want=""; else want=$(printf '%s\n' "$@" | sort); fi
 	if [ "$got" = "$want" ]; then
-		GOOD=$((GOOD+1)); printf '  OK    %s：变红 %d 条，与正文一致\n' "$name" "$#"
+		GOOD=$((GOOD+1)); printf '  OK    %s：变红 %d 条，与脚本内登记一致\n' "$name" "$#"
 	else
-		BAD=$((BAD+1)); printf '  BAD   %s：变红的判据与正文不一致（< 正文写的，> 实际变红的）\n' "$name"
+		BAD=$((BAD+1)); printf '  BAD   %s：变红的判据与脚本内登记不一致（< 登记的，> 实际变红的）\n' "$name"
 		diff <(printf '%s\n' "$want") <(printf '%s\n' "$got") | grep '^[<>]' | sed 's/^/        /'
 	fi
 }

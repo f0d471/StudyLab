@@ -27,9 +27,9 @@ mut() {
 	got=$(grep '^  FAIL  ' "$d/run.log" | sed 's/^  FAIL  //' | sort)
 	if [ $# -eq 0 ]; then want=""; else want=$(printf '%s\n' "$@" | sort); fi
 	if [ "$got" = "$want" ]; then
-		GOOD=$((GOOD+1)); printf '  OK    %s：变红 %d 条，与正文一致\n' "$name" "$#"
+		GOOD=$((GOOD+1)); printf '  OK    %s：变红 %d 条，与脚本内登记一致\n' "$name" "$#"
 	else
-		BAD=$((BAD+1)); printf '  BAD   %s：变红的判据与正文不一致（< 正文写的，> 实际变红的）\n' "$name"
+		BAD=$((BAD+1)); printf '  BAD   %s：变红的判据与脚本内登记不一致（< 登记的，> 实际变红的）\n' "$name"
 		diff <(printf '%s\n' "$want") <(printf '%s\n' "$got") | grep '^[<>]' | sed 's/^/        /'
 	fi
 }
