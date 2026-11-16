@@ -1,8 +1,6 @@
 # 01 Verilator 把电路变成程序
 
     实验    labs/E/04-仿真与验证/01-Verilator把电路变成程序/
-            check.sh 基线 82 PASS / 0 FAIL / 0 SKIP（本机约 32 秒）
-            mutate.sh 基线 25 OK / 0 BAD（本机约 15 分钟）
     环境    WSL2 沙箱：Ubuntu 26.04 LTS，内核 6.6.114.1-microsoft-standard-WSL2
             Verilator 5.052 2026-09-05 rev 5.052-983a06a
             g++ 15.2.0，GNU Make 4.4.1，GNU Awk 5.3.2
@@ -89,9 +87,9 @@ cd /workspace/docs/topics/Knowledge/labs/E/04-仿真与验证/01-Verilator把电
 bash check.sh
 ```
 
-check.sh 先清空 `build/`，再从源码重建本章的全部产物，逐条核对，最后一行打印 `82 PASS / 0 FAIL / 0 SKIP`，本机约 32 秒。跑完以后，正文里的每条命令都可以在这个目录里再手敲一遍，产物和输出都落在 `build/` 下。不用本平台的读者，在装有 Verilator 5.052 的 Linux 里进入实验目录同样可以跑；版本不同时，第 1 节的版本判据会先变红。
+跑完以后，正文里的每条命令都可以在这个目录里再手敲一遍，产物和输出都落在 `build/` 下。不用本平台的读者，在装有 Verilator 5.052 的 Linux 里同样可以跑；版本不同时，行号可能对不上。
 
-每个 [判] 块末尾都有一段"注错见红"，写着改坏哪一处、哪几条判据会变红。这些说法由同一目录的 mutate.sh 逐条实跑：它把每一种改坏做在一份副本上，跑副本的 check.sh，核对变红的判据恰好是正文写的那几条，最后一行打印 `25 OK / 0 BAD`。注错见红里写的条数按 check.sh 的判据行计，[判] 列表有时把几条判据合写在一行里。它要把 check.sh 完整跑 25 遍，本机约 15 分钟，不必每次都跑；改了 check.sh 或实验源码以后再跑。
+全量核对在本章 labs，正文不涉及判据。
 
 ---
 
@@ -269,7 +267,7 @@ make: Leaving directory '/workspace/docs/topics/Knowledge/labs/E/04-仿真与验
 5. `g++ sim_main.o verilated.o verilated_threads.o Vour__ALL.a ... -o Vour`：链接，把四样东西拼成可执行文件 `Vour`。`-pthread -lpthread -latomic` 是运行库需要的线程库和原子操作库。
 6. 最后三行是 Verilator 的报告，`bld` 这一次不再是零。
 
-耗时每次不同。上面这次 Walltime 是 0.933 秒，其中 bld 是 0.807 秒，这么快是因为 ccache 里已经有这几个文件的编译结果。check.sh 还会设置环境变量 `CCACHE_DISABLE=1`，关掉 ccache 再构建一次（产物在 `build/ournc/`，日志是 `build/ournc.log`）。同一次运行里，那一次的 bld 是 5.115 秒，Walltime 是 5.350 秒。这两个数是本机数字，check.sh 只判"不用 ccache 的 bld 超过用 ccache 时的 2 倍"，并打印两个实得值。
+耗时每次不同。上面这次 Walltime 是 0.933 秒，其中 bld 是 0.807 秒，这么快是因为 ccache 里已经有这几个文件的编译结果。把环境变量 `CCACHE_DISABLE=1` 设上再构建一次（产物在 `build/ournc/`，日志是 `build/ournc.log`）。同一次运行里，那一次的 bld 是 5.115 秒，Walltime 是 5.350 秒。两个数是同一次运行的本机数字：不用 ccache 的 bld 超过用 ccache 时的 2 倍。
 
 四步和产物的对应关系如下图。
 
@@ -374,37 +372,6 @@ exit=0
 ```
 
 `$finish` 的报告紧跟在 `before` 后面，说明它是当场打印的；`after` 照样出现，说明 `$finish` 没有打断 `initial` 块。仿真在哪里结束，由 testbench 的循环决定。第 7 节会看到这件事的另一面：设计里没有 `$finish`，循环又只看 `gotFinish`，程序就停不下来。
-
-### 2.5 [判] 第 1、2 节
-
-    [ ] verilator --version 输出 Verilator 5.052 2026-09-05 rev 5.052-983a06a
-    [ ] 只给 --cc：build/cconly 里 13 个文件，有 Vour.h、Vour.cpp、Vour.mk，
-        没有 .o 和 Vour；报告里 bld=0.000
-    [ ] 生成的 5 个 .cpp 都包含 Vour__pch.h
-    [ ] 加 --exe --build：日志里有一行 g++ 把 sim_main.o verilated.o
-        verilated_threads.o Vour__ALL.a 链接成 Vour
-    [ ] Vour__ALL.cpp 是 1 行注释、1 行 #define、5 行 #include
-    [ ] 设置 CCACHE_DISABLE=1 再构建一次，bld 超过用 ccache 时的 2 倍
-        （本次实得 5.115 秒与 0.807 秒，本机数字）
-    [ ] Vour 是 x86-64 的 ELF 可执行文件，230880 字节（本机工具链）
-    [ ] 生成代码里有 VL_WRITEF_NX("Hello World\n",0); 和 VL_FINISH_MT("our.v", 2, "");
-    [ ] Vour 一共打印 2 行：Hello World 与 - our.v:2: Verilog $finish，退出码 0
-    [ ] Vfin 一共打印 3 行：before、$finish 的报告、after，退出码 0
-
-    注错见红：版本和文件大小是环境判据，实验目录里没有能改坏的源码，mutate.sh
-    改的是 check.sh 里的期望值（改成 5.051、230881），各自那一条变红。把 our.v 的
-    "Hello World" 改成 "Hello"，VL_WRITEF_NX 与第 1 行输出两条判据变红；把 fin.v
-    的 "before" 改成 "BEFORE"，before 那一条变红；删掉 fin.v 里的 $display("after");，
-    after 与"一共 3 行"两条变红。VL_FINISH_MT、"第 2 行是 $finish 的报告"与 fin.v
-    的"报告紧跟在 before 后面"三条核对生成代码与工具输出，mutate.sh 改 check.sh
-    里的期望值（VL_FINISH_MT 改成 VL_STOP_MT，期望报告里的 $finish 改成 $stop），
-    这三条变红。真把 our.v 的 $finish
-    改成 $stop 也实测过：报告变成 %Error: our.v:2: Verilog $stop，多出一行
-    Aborting...，退出码 1；这个改法还会让 ccache 那条一起变红，源码变了，缓存里
-    没有这次编译，第一次构建拿不到加速，所以 mutate.sh 不采用它，改成动期望值。
-    其余几条（13 个文件、没有 .o、bld=0.000、
-    5 个 .cpp 都包含 Vour__pch.h、链接行、Vour__ALL.cpp 的行数、ccache 的倍数）说的是
-    Verilator 和工具链的行为，实验源码改不坏它们，由第 1 节的版本判据兜底。
 
 **这一节搭好的积木**：`verilator --cc` 把 Verilog 翻译成一个 C++ 类（类名是 `V` 加文件名）；`--exe --build` 再调用 make 和 g++，把这个类、我们写的 `main()` 和运行库链接成普通的可执行文件。`initial` 块在第一次 `eval` 里执行；`$finish` 只是打印报告、立起 `gotFinish` 标志，停不停由 `main()` 里的循环决定。手册示例没有端口，接下来的问题：一个有输入输出的电路，端口和 `assign` 在 C++ 里变成了什么。
 
@@ -765,34 +732,6 @@ Aborting...
 
 testbench 里写 `rand() & 1` 而不是直接写 `rand()`，就是为了让输入只有最低位可能是 1，满足这条约定（第 5 节）。
 
-### 4.6 [判] 第 3、4 节
-
-    [ ] Vtop.h 的三个端口是 VL_IN8(&a,0,0);、VL_IN8(&b,0,0); 与 VL_OUT8(&f,0,0);
-    [ ] 生成代码里有 vlSelfRef.f = ((IData)(vlSelfRef.a) ^ (IData)(vlSelfRef.b));
-        （去掉空白和换行后比较）
-    [ ] eval 探针：P0 全 0，P1 f=0，P2 f=1，P3 f=1，P4 时间为 0，P5 f=2，
-        一共 6 行，退出码 0
-    [ ] 加 +verilator+rand+reset+1 运行，P0 变成 a=1 b=1 f=1
-    [ ] 调试构建：每条编译命令带 -ggdb -fsanitize=address,undefined
-        -D_GLIBCXX_DEBUG -DVL_DEBUG=1，链接命令带 -fsanitize=address,undefined
-    [ ] 普通构建的生成代码里也有 overWidthError("a")，被 #ifdef VL_DEBUG 包着
-    [ ] 调试构建运行时报 Testbench C set input 'a' to value that overflows ...，
-        没有 P5 那一行，退出码非 0（实得 1）
-
-    注错见红：在 P1 的 printf 之前插一句 top->eval();，P1 那条判据变红；删掉 P2
-    之前的 top->eval();，P2 那条变红；删掉 contextp->commandArgs(argc, argv);，
-    rand+reset 那条变红；把 top->a = 2; 改成 top->a = 1;（不再越界），P5 f=2 和
-    调试构建的三条（拦下、没有 P5、退出码）变红；把 top.v 的 a ^ b 改成 a | b，
-    生成代码那条变红，第 5 节的六条判据也跟着变红。第 5 节的两条独立判据不变红：
-    assert 在第一个 11 上就 abort，a/b/f 的打印一行也没写进文件（缓冲的原因在
-    6.1 节，文件里只有 stderr 重定向进来的报错一行），awk 数出的错行自然是 0。
-    这正是 6.4 节的注错 4 要先删掉 assert 的原因。
-    把 top.v 的 input a、input b、output f 都改成 [7:0]：端口 a、b、f 三条，rand+reset
-    那条（a、b、f 的初值都变成 255），普通构建里的 overWidthError("a") 那条（端口
-    正好装满 CData，检查不再生成），以及调试构建的三条（拦下、P5 行、退出码）变红。
-    f 的生成表达式不变，那条不动。调试构建的编译与链接选项是工具链行为，实验源码
-    改不坏，同样由版本判据兜底。
-
 **这一节搭好的积木**：`eval` 按区依次循环；ico 区比较顶层输入和上一次的值，有变化就执行由输入驱动的组合逻辑，一直重复到没有变化为止。所以写了输入必须调用 `eval`，`f` 在这次调用里算好；组合电路不需要时钟，`eval` 也不推进仿真时间。没赋值的信号初值默认是 0。端口宽度的约定要 testbench 自己守，普通构建不检查。接下来的问题：把"写输入、`eval`、读输出"放进循环，怎样让程序自己判断电路对不对。
 
 ---
@@ -889,7 +828,7 @@ seen: 00=3 01=2 10=2 11=3
 
 3 + 2 + 2 + 3 = 10，与循环次数相符。
 
-再运行一次，输出与第一次逐字节相同（`cmp build/run10.txt build/run10b.txt` 没有输出）。原因在 `rand()`：程序从来没有调用 `srand` 设置种子，而 `rand` 的规则是没有设置种子时，等同于用种子 1 开始（man 3 rand）。好处是每次都能复现同一组输入；代价是每次测的也都是这同一组。check.sh 正是利用这一点，对这 10 行做精确判据。
+再运行一次，输出与第一次逐字节相同（`cmp build/run10.txt build/run10b.txt` 没有输出）。原因在 `rand()`：程序从来没有调用 `srand` 设置种子，而 `rand` 的规则是没有设置种子时，等同于用种子 1 开始（man 3 rand）。好处是每次都能复现同一组输入；代价是每次测的也都是这同一组。5.3 节的独立重算正是利用这一点。
 
 跑 1000 次：
 
@@ -908,7 +847,7 @@ seen: 00=246 01=245 10=265 11=244
 
 ### 5.3 [做 L1] 独立判据：不靠程序自己的 assert
 
-check.sh 不相信程序自己的 `assert`，它从打印出来的每一行重新算一遍 `a ^ b`：
+测试还可以不依赖程序自己的 `assert`：从打印出来的每一行重新算一遍 `a ^ b`：
 
 ```bash
 awk -F'[=,]' '/^a = /{ if ($6+0 != (($2+0) != ($4+0))) n++ } END { print n+0 }' build/run10.txt
@@ -923,30 +862,15 @@ awk -F'[=,]' '/^a = /{ if ($6+0 != (($2+0) != ($4+0))) n++ } END { print n+0 }' 
 3. `$2+0`：加 0 把带空格的字段转成数。`(($2+0) != ($4+0))` 在 `a`、`b` 不同时为 1，相同时为 0，对 1 位的值来说就是异或。
 4. 和第 6 段 `f` 不相等，就把计数 `n` 加一；最后打印 `n+0`，`+0` 让一行都没匹配、`n` 还是空串时也打印 0 而不是空行。
 
-这个判据只依赖输出的文本，不依赖程序内部有没有检查。第 6.4 节会看到它的用处。
+这个检查只依赖输出的文本，不依赖程序内部有没有检查。第 6.4 节会看到它的用处。
 
-### 5.4 [判] 第 5 节
-
-    [ ] 跑 10 次：退出码 0，打印 10 行，awk 重算不对的行数为 0
-    [ ] 最后一行是 seen: 00=3 01=2 10=2 11=3
-    [ ] 连续运行两次，输出逐字节相同
-    [ ] 跑 1000 次：退出码 0，打印 1000 行，awk 重算不对的行数为 0，
-        四种组合都出现过
-
-    注错见红：在 tb_switch.cpp 的 int n = 10; 前面加上 srand(2);，输入序列改变，
-    seen 那条精确判据变红。第 6 节注错 1 的伪终端判据也跟着变红：输入序列变了，
-    第一次出错的位置跟着变，assert 前打印的行数不再是 2。对照：加的是 srand(1);
-    时一条都不变红，种子 1 就是不设种子时的默认值。"两次运行逐字节相同"依赖
-    rand() 的默认种子行为，属于工具链事实，实验源码上没有能只改坏它的注错，
-    由第 1 节的版本判据兜底。
-
-**这一节搭好的积木**：testbench 的骨架是一个循环，每一轮随机产生输入、写进模型、调用 `eval`、读出输出，再用一个独立算出的期望值去检查。`rand()` 不设置种子时，每次运行的输入序列相同。程序之外还可以用 awk 从输出重算一遍。接下来的问题：所有判据都是绿的，能不能说明测试有用。
+**这一节搭好的积木**：testbench 的骨架是一个循环，每一轮随机产生输入、写进模型、调用 `eval`、读出输出，再用一个独立算出的期望值去检查。`rand()` 不设置种子时，每次运行的输入序列相同。程序之外还可以用 awk 从输出重算一遍。接下来的问题：测试全绿，能不能说明测试有用。
 
 ---
 
-## 6 注错见红：测试自己能不能报错
+## 6 测试自己能不能报错：故意改坏四处
 
-上一节全部通过。这一节的问题：一个永远不会失败的测试什么也证明不了；怎样确认这个测试在电路错了的时候真的会报错。办法是故意改坏一处，看判据是否变红。check.sh 自己构建四份改坏的副本，产物放在 `build/m1/` 到 `build/m4/`。
+上一节全部通过。这一节的问题：一个永远不会失败的测试什么也证明不了；怎样确认这个测试在电路错了的时候真的会报错。办法是故意改坏一处，看测试报不报警。下面四份改坏的副本，产物放在 `build/m1/` 到 `build/m4/`。
 
 ### 6.1 [做 L2] 注错 1：电路写错
 
@@ -997,7 +921,7 @@ exit=134
 
 两行打印都在，第 2 行就是出错的那一轮：`a=1 b=1`，`f` 是 1。退出码同样是 134。
 
-testbench 的输出重定向到文件时（check.sh 和以后的 Makefile 都会这样做），程序崩溃前的打印可能全部丢失。要保住现场，把诊断信息打印到 stderr（默认不缓冲），或者在 `assert` 之前调用 `fflush(stdout)`。
+testbench 的输出重定向到文件时（以后的 Makefile 就会这样做），程序崩溃前的打印可能全部丢失。要保住现场，把诊断信息打印到 stderr（默认不缓冲），或者在 `assert` 之前调用 `fflush(stdout)`。
 
 ### 6.2 [做 L2] 注错 2：忘了调用 eval
 
@@ -1101,32 +1025,6 @@ awk -F'[=,]' '/^a = /{ if ($6+0 != (($2+0) != ($4+0))) n++ } END { print n+0 }' 
 
 四种注错合起来说明三件事：testbench 里必须有检查，否则退出码 0 什么也不说明（注错 4）；检查的期望值要独立于电路算出来，`assert` 用 C 的 `^`，awk 从文本重算（注错 1、4）；构建本身也可能因为名字出错，构建失败要先读懂报错再改（注错 3）。
 
-### 6.5 [判] 第 6 节
-
-    [ ] 注错 1：退出码 134；kill -l 6 输出 ABRT，即 SIGABRT 是 6 号信号
-    [ ] 注错 1：stderr 里有 tb_switch.cpp 加行号、函数名和 Assertion `top->f == (a ^ b)' failed.
-    [ ] 注错 1：stdout 重定向到文件时是 0 行；伪终端里有 2 行，退出码同为 134
-    [ ] 注错 2：退出码 134
-    [ ] 注错 3：-Wall 下构建失败，原因是 DECLFILENAME
-    [ ] 注错 3：不加 -Wall 时没有 DECLFILENAME，生成的是 Vswitch.h，g++ 报找不到 Vtop.h；
-        -Wall -Wno-DECLFILENAME 同样失败在 Vtop.h
-    [ ] 注错 3：不加 -Wall、加 --top top 构建成功；加 -Wall 时 --top top 仍因
-        DECLFILENAME 失败；-Wall -Wno-DECLFILENAME --top top 构建成功
-    [ ] 注错 4：退出码 0，打印 10 行，awk 抓出 3 行
-
-    注错见红：这一节的判据核对的是"注错真的报错"，反过来让注错什么也不改坏，
-    判据就必须变红。mutate.sh 改的是 check.sh 里做注错的命令：
-    把注错 1 的 sed 改成 s/a ^ b/a ^ b/，电路是对的，注错 1 的五条判据变红；
-    注错 4 用的是注错 1 的电路，它的 awk 判据也一起变红，一共六条。
-    把注错 3 的副本名 switch.v 换回 top.v，文件名和模块名一致，"构建失败"、
-    "原因是 DECLFILENAME"、"类名是 Vswitch"、"找不到 Vtop.h"、"-Wno-DECLFILENAME
-    也失败"、"-Wall 加 --top 也失败"六条变红。
-    把注错 2 的 sed 换成删除一行不存在的内容，eval 还在，注错 2 那一条变红。
-    把注错 4 的 sed 也这样换，assert 还在，程序在第 2 轮 abort，a/b/f 打印 0 行
-    （文件里只有报错一行），注错 4 的三条全部变红。
-    SIGABRT 的编号是环境判据，mutate.sh 把 check.sh 里期望的 ABRT 改成 KILL，
-    那一条变红。
-
 **这一节搭好的积木**：判断一个测试有没有用，要先把被测对象改坏，看测试会不会报错。assert 失败的退出码是 134（128 加 SIGABRT 的 6），它的报错带着文件、行号和条件；stdout 写文件时，abort 前的打印会丢。Verilator 的警告默认致命，类名跟着文件名走。接下来的问题：把循环条件补全成手册示例的 `!contextp->gotFinish()`，而双控开关没有 `$finish`，会怎样。
 
 ---
@@ -1198,23 +1096,9 @@ exit=130
 timeout -s INT 1 build/forever/Vtop | wc -l
 ```
 
-1 秒写出的行数每次不同，最近一次 check.sh 实得 5634457 行（本机数字）。check.sh 只判"不少于 1 万行"，并打印实得值。
+1 秒写出的行数每次不同，最近一次实得 5634457 行（本机数字，远超 1 万）。
 
 不想按 Ctrl+C，办法是让循环有尽头：像 `tb_switch.cpp` 那样数次数，或者在条件里同时检查 `gotFinish` 和一个圈数上限。
-
-### 7.3 [判] 第 7 节
-
-    [ ] kill -l 2 输出 INT，即 SIGINT 是 2 号信号
-    [ ] timeout --help 的 Exit status 一段写着
-        124  if COMMAND times out, and --preserve-status is not specified
-    [ ] timeout -s INT 1 打断无限循环，返回 124
-    [ ] 加 --preserve-status 返回 130，即 128 加 SIGINT 的 2
-    [ ] 1 秒内写出的行数不少于 1 万（最近一次实得 5634457 行，本机数字）
-
-    注错见红：把 tb_forever.cpp 的 while (!contextp->gotFinish()) 换成
-    for (int i = 0; i < 10 && !contextp->gotFinish(); i++)，循环 10 圈就结束，
-    timeout 等不到 1 秒，后三条判据全部变红。前两条是环境判据，mutate.sh 改的是
-    check.sh 里的期望值：INT 改成 QUIT、124 改成 125，各自那一条变红。
 
 **这一节搭好的积木**：`gotFinish` 只由 `$finish`、`$stop` 和致命错误立起来；设计里没有 `$finish` 时，只看这个标志的循环永不结束，只能靠 SIGINT 打断，退出码 130。接下来的问题：第 4 节说 ico 区"一直重复到没有变化为止"，有没有一种电路，让这个"为止"永远等不到。
 
@@ -1357,19 +1241,6 @@ Aborting...
 
 构建时的 UNOPTFLAT 和运行时的 DIDNOTCONVERGE 说的是同一个环。`-Wno-UNOPTFLAT` 只是不让构建失败，环还在，问题推迟到运行时才暴露，而且要等到输入恰好让环闭合（这里是 `en=1`）才出现。
 
-### 8.3 [判] 第 8 节
-
-    [ ] loop.v 在 -Wall 下构建失败；日志有
-        %Warning-UNOPTFLAT: loop.v:3:10: Signal unoptimizable: Circular combinational logic
-        和 %Error: Exiting due to 1 warning(s)
-    [ ] 不加 -Wall 同样构建失败，日志里有 UNOPTFLAT
-    [ ] 加 -Wno-UNOPTFLAT 构建后运行：en=0 打印 f=0；en=1 报 DIDNOTCONVERGE
-        （Input combinational region ... 10000 tries），没有 en=1 那一行，退出码 1
-
-    注错见红：把 loop.v 的 ~x 改成 x，x = x 在 en=1 时也稳定，构建仍报 UNOPTFLAT，
-    运行时不再 DIDNOTCONVERGE，en=1 的三条判据变红；把 ~x 改成 ~en，环断开，构建
-    不再失败，构建的四条判据也变红，只剩 en=0 那条通过。
-
 **这一节搭好的积木**：ico 区反复执行到没有触发为止；组合环让触发永不停止，`eval` 在 10000 圈后报 DIDNOTCONVERGE 退出。Verilator 在构建时用 UNOPTFLAT 提前指出这种环，这条警告默认开着、默认致命。
 
 ---
@@ -1475,8 +1346,8 @@ testbench 骨架：
 
     9. 普通构建里给 a 写 2，f 是多少？调试构建呢？退出码为什么是 1 而不是 134？  (4.5)
 
-   10. 对着 run10.txt 数一遍 seen。把 srand(2) 加进 tb_switch.cpp，check.sh 里
-       哪几条判据会变红？换成 srand(1) 呢？                                     (5.2 5.4)
+   10. 对着 run10.txt 数一遍 seen。把 srand(2) 加进 tb_switch.cpp，输出
+       会变吗？换成 srand(1) 呢？                                     (5.2 5.4)
 
    11. 注错 1 的 out.txt 为什么是 0 行？怎样改 tb_switch.cpp，让重定向到文件时
        也能留下出错的那一行？改完用注错 1 验证。                                (6.1)
@@ -1514,7 +1385,7 @@ testbench 骨架：
            构建会拦下。写输入时只写有效位，例如 rand() & 1。              (4.5)
 
     坑 6   rand() 不设种子时每次序列相同：可以复现，但每次测的都是同一组
-           输入。改成 srand(time(0)) 时，要同时改掉依赖这组序列的判据。  (5.2)
+           输入。改成 srand(time(0)) 时，要同时改掉依赖这组序列的预期输出。  (5.2)
 
     坑 7   $finish 不打断 initial 块，它后面的语句照样执行；停不停由
            testbench 的循环决定。                                          (2.4)
@@ -1558,26 +1429,26 @@ testbench 骨架：
 | 节 | 说法 | 依据 |
 | --- | --- | --- |
 | 1.1 | Verilator 把 Verilog/SystemVerilog 转换成可编译执行的 C++/SystemC 模型，定位为编译器；典型用法五步，第 5 步（波形与覆盖率）要另外打开 | Verilator 指南 5.054 第 1 章 Overview（抽取文本 `E:\Workspace\Temp\ysyx-e4\src\verilator-guide.txt` 第 99 至 116 行） |
-| 1.1 | 沙箱里是 5.052，路径 `/toolchains/verilator-5052/bin/verilator` | check.sh 环境段（`command -v verilator`）与第 1 节 |
+| 1.1 | 沙箱里是 5.052，路径 `/toolchains/verilator-5052/bin/verilator` | `command -v verilator`；第 1 节 |
 | 1.1 | 在线指南是 5.054 | 指南抽取文本第 3、4 行（Release 5.054） |
 | 2.1、2.2 | `--cc`、`--exe`、`--build`、`-j`、`-Wall`、`--Mdir` 的含义 | man 页 `tools/verilator-5.052/share/man/man1/verilator.1` 第 113、161、110、193、316、213 行；指南 2.2 节（抽取文本第 204 至 213 行） |
-| 2.1 | 只给 `--cc` 产出 13 个文件，没有 `.o`，`bld=0.000` | check.sh 第 2 节；`build/cconly.log` |
+| 2.1 | 只给 `--cc` 产出 13 个文件，没有 `.o`，`bld=0.000` | `build/cconly.log` |
 | 2.1 | 各生成文件的用途；`___024root` 来自 `$root` | 指南 15.2 节 Files Read/Written（抽取文本第 6489 至 6535 行）；指南 6.1 节（第 971 至 973 行） |
-| 2.1、2.4、6.3 | 类名默认取 `V` 加 `--top` 的模块名，否则取 `V` 加第一个 Verilog 文件名 | 指南 13.1 节 `--prefix`（第 4108 至 4110 行）、`--top`（第 4340 至 4343 行）；check.sh 第 6 节注错 3 |
+| 2.1、2.4、6.3 | 类名默认取 `V` 加 `--top` 的模块名，否则取 `V` 加第一个 Verilog 文件名 | 指南 13.1 节 `--prefix`（第 4108 至 4110 行）、`--top`（第 4340 至 4343 行）；第 6.3 节 |
 | 2.2 | 构建过程：三个 `.o`、`verilator_includer` 合成 `Vour__ALL.cpp`、链接成 `Vour` | `build/our.log`；`build/our/Vour__ALL.cpp` |
 | 2.2 | 打包 `.a` 的命令带 `@`，不回显 | `share/verilator/include/verilated.mk` 第 253 至 258 行 |
-| 2.2 | 用 ccache 时 bld=0.807 秒，`CCACHE_DISABLE=1` 时 bld=5.115 秒；check.sh 判后者超过前者 2 倍 | check.sh 第 2 节；`build/our.log`、`build/ournc.log`（2026-11-13 实跑） |
-| 2.2 | `Vour__ALL.cpp` 是 1 行注释、1 行 `#define`、5 行 `#include` | check.sh 第 2 节；`build/our/Vour__ALL.cpp` |
-| 2.2 | `Vour` 是 x86-64 ELF，230880 字节 | check.sh 第 2 节；`file`、`stat` 输出 |
-| 2.3 | `$display` 变成 `VL_WRITEF_NX`，`$finish` 变成 `VL_FINISH_MT` | `build/our/Vour___024root__0__Slow.cpp` 第 13 至 23 行；check.sh 第 2 节 |
+| 2.2 | 用 ccache 时 bld=0.807 秒，`CCACHE_DISABLE=1` 时 bld=5.115 秒，后者超过前者 2 倍 | `build/our.log`、`build/ournc.log`（2026-11-13 实跑） |
+| 2.2 | `Vour__ALL.cpp` 是 1 行注释、1 行 `#define`、5 行 `#include` | `build/our/Vour__ALL.cpp` |
+| 2.2 | `Vour` 是 x86-64 ELF，230880 字节 | `file`、`stat` 输出 |
+| 2.3 | `$display` 变成 `VL_WRITEF_NX`，`$finish` 变成 `VL_FINISH_MT` | `build/our/Vour___024root__0__Slow.cpp` 第 13 至 23 行 |
 | 2.3 | 第一次 `eval` 执行 static、initial 与 Settle | `share/verilator/include/verilated.cpp` 第 4066 至 4079 行 |
 | 2.3 | `VL_FINISH_MT` 在单线程模型里当场执行 `vl_finish` | `verilated.cpp` 第 245 至 252 行；`verilated_imp.h` 第 158 至 163 行；`verilated.h` 第 1003 行 |
 | 2.3、7.1 | `vl_finish` 打印报告并置 `gotFinish`；`vl_stop`、`vl_fatal` 也置 `gotFinish` | `verilated.cpp` 第 166 至 171 行、第 182 至 183 行、第 196 至 197 行 |
-| 2.4 | `$finish` 之后的 `$display` 照样执行 | check.sh 第 2 节（fin.v） |
+| 2.4 | `$finish` 之后的 `$display` 照样执行 | 实测（fin.v） |
 | 3.1 | 端口宏与类型：`VL_IN8`/`VL_OUT8` 展开成 `CData`，`CData` 是 `uint8_t`；更宽的类型 | `build/switch/Vtop.h` 第 31 至 36 行；`verilated_types.h` 第 251、261、255 行；`verilated.h` 第 119 至 123 行 |
 | 3.1 | 端口是绑定到根对象成员的引用 | `build/switch/Vtop.cpp` 第 13 至 16 行 |
-| 3.2 | `assign` 变成 `eval_ico` 里的赋值 | `build/switch/Vtop___024root__0.cpp` 第 18、53 至 59 行；check.sh 第 3 节 |
-| 4.1 | P0 至 P5 的输出与退出码 | check.sh 第 4 节；`build/eval.txt` |
+| 3.2 | `assign` 变成 `eval_ico` 里的赋值 | `build/switch/Vtop___024root__0.cpp` 第 18、53 至 59 行 |
+| 4.1 | P0 至 P5 的输出与退出码 | `build/eval.txt` |
 | 4.2 | `eval` 的调用链与各区循环 | `build/switch/Vtop.h` 第 61 行；`Vtop.cpp` 第 59 至 62 行；`verilated.h` 第 390 至 396 行；`verilated.cpp` 第 4055 至 4135 行 |
 | 4.2 | ico 区的触发与计算；其余各区返回 0 | `build/switch/Vtop___024root__0.cpp` 第 18 至 63 行、第 65 至 103 行 |
 | 4.2 | act 到 react 五个区的循环层层嵌套 | `verilated.cpp` 第 4095 至 4126 行 |
@@ -1587,34 +1458,33 @@ testbench 骨架：
 | 4.3 | 仿真时间由 `timeInc` 推进 | `verilated.h` 第 746 行；`build/eval.txt` 的 P4 |
 | 4.4 | Verilator 基本上是二值仿真器 | 指南 10.3.8 节 Unknown States（抽取文本第 2141 至 2143 行） |
 | 4.4 | 初值由 `VL_SCOPED_RAND_RESET_I` 按 `randReset` 决定，默认 0 | `build/switch/Vtop___024root__0__Slow.cpp` 第 167 至 169 行；`verilated.cpp` 第 577 至 587 行；指南 13.5 节 `+verilator+rand+reset`（第 4894 至 4896 行）；man 页第 354 行 |
-| 4.4 | 加 `+verilator+rand+reset+1` 后 P0 全 1；删掉 `commandArgs` 后参数失效 | check.sh 第 4 节；mutate.sh 的"删commandArgs"一项 |
+| 4.4 | 加 `+verilator+rand+reset+1` 后 P0 全 1；删掉 `commandArgs` 后参数失效 | 实测（删 commandArgs 行重编） |
 | 4.5 | 输入不得有超出宽度的位，`--runtime-debug` 检查 | 指南 6.2 节（第 980、981 行）；man 页第 265 行；`build/eval/Vtop___024root__0.cpp` 第 126 至 139 行；`build/switch/Vtop.cpp` 第 64 至 70 行 |
-| 4.5 | 调试构建的编译选项 `-ggdb -fsanitize=address,undefined -D_GLIBCXX_DEBUG -DVL_DEBUG=1`，链接带 `-fsanitize=address,undefined` | check.sh 第 4 节；`build/evaldbg.log` |
-| 4.5 | 报错文字、`unknown:0`、退出码 1 | `verilated.cpp` 第 3943 至 3949 行、第 194 至 214 行；check.sh 第 4 节；`build/evaldbg.txt` |
+| 4.5 | 调试构建的编译选项 `-ggdb -fsanitize=address,undefined -D_GLIBCXX_DEBUG -DVL_DEBUG=1`，链接带 `-fsanitize=address,undefined` | `build/evaldbg.log` |
+| 4.5 | 报错文字、`unknown:0`、退出码 1 | `verilated.cpp` 第 3943 至 3949 行、第 194 至 214 行；`build/evaldbg.txt` |
 | 4.5 | `%Error` 走 stdout；`exit` 写出缓冲 | `verilated.cpp` 第 133 至 158 行；`verilated.h` 第 421、422 行；man 3 exit |
 | 4.1 | `final()` 在仿真结束时调用 | 指南 6.2 节（第 982、983 行） |
-| 5.2 | 10 次与 1000 次的输出、两次运行逐字节相同 | check.sh 第 5 节；`build/run10.txt`、`build/run1000.txt` |
-| 5.2 | 不设种子的 `rand()` 等同种子 1 | man 3 rand；mutate.sh 的"播种1"一项（一条都不变红） |
+| 5.2 | 10 次与 1000 次的输出、两次运行逐字节相同 | `build/run10.txt`、`build/run1000.txt` |
+| 5.2 | 不设种子的 `rand()` 等同种子 1 | man 3 rand；实测（改播种为 1，输出逐字节不变） |
 | 6.1 | `assert` 失败调用 `abort()`，报错带文件、函数、行号和条件 | man 3 assert |
-| 6.1、7.2 | 进程被信号 n 终止时，shell 报告的退出码是 128+n | man bash 的 EXIT STATUS 一节；check.sh 第 6、7 节实测 134 与 130 |
-| 6.1、7.1 | SIGABRT 是 6，SIGINT 是 2；Ctrl+C 产生 SIGINT | man 7 signal（SIGINT：Interrupt from keyboard）；`kill -l 6`、`kill -l 2`（check.sh 第 6、7 节） |
+| 6.1、7.2 | 进程被信号 n 终止时，shell 报告的退出码是 128+n | man bash 的 EXIT STATUS 一节；实测 134 与 130 |
+| 6.1、7.1 | SIGABRT 是 6，SIGINT 是 2；Ctrl+C 产生 SIGINT | man 7 signal（SIGINT：Interrupt from keyboard）；`kill -l 6`、`kill -l 2` |
 | 6.1 | 终端按行缓冲，文件按块缓冲，stderr 不缓冲 | man 3 setbuf |
 | 6.1 | glibc 2.27 起 `abort()` 不写出缓冲 | man 3 abort |
-| 6.1 | 注错 1 的退出码、报错、文件里 0 行、伪终端里 2 行 | check.sh 第 6 节；`build/m1/err.txt`、`build/m1/pty.txt` |
+| 6.1 | 注错 1 的退出码、报错、文件里 0 行、伪终端里 2 行 | `build/m1/err.txt`、`build/m1/pty.txt` |
 | 6.1 | `script` 的 `-q`、`-e`、`-c` | `script --help`（util-linux 2.41.3） |
-| 6.3 | DECLFILENAME 的含义与默认关闭 | 指南 14.3 节（第 5232 至 5237 行）；check.sh 第 6 节 |
+| 6.3 | DECLFILENAME 的含义与默认关闭 | 指南 14.3 节（第 5232 至 5237 行） |
 | 6.3 | `-Wall` 打开风格警告；`-Wno-fatal` 让警告不终止 | 指南 13.1 节（第 4474 至 4476 行、第 4495 至 4498 行）；man 页第 316、319、321 行 |
-| 6.3 | 不加 -Wall、加 -Wno-DECLFILENAME、加 --top，以及三者组合的各种结果 | check.sh 第 6 节；`build/m3/` 下的日志 |
-| 6.4 | 注错 4 退出码 0，awk 抓出 3 行 | check.sh 第 6 节；`build/m4/out.txt` |
-| 7.2 | `timeout` 的 124 与 `--preserve-status` | `timeout --help`（uutils coreutils 0.8.0，`build/timeout-help.txt`）；check.sh 第 7 节 |
-| 7.2 | 1 秒内的行数 | check.sh 第 7 节，2026-11-13 多次实跑，最近一次 5634457 行 |
-| 各 [判] 块 | 注错见红：每种改坏让哪几条判据变红 | mutate.sh，2026-11-13 实跑 25 OK / 0 BAD，用时 824 秒 |
-| 8.1 | UNOPTFLAT 的含义，按信号而非按位分析 | 指南 14.3 节（第 6227 至 6241 行）；`build/loopwall.log`；check.sh 第 8 节 |
-| 8.2 | DIDNOTCONVERGE 的含义 | 指南 14.3 节（第 5289 至 5300 行）；`build/loop.txt`；check.sh 第 8 节 |
+| 6.3 | 不加 -Wall、加 -Wno-DECLFILENAME、加 --top，以及三者组合的各种结果 | `build/m3/` 下的日志 |
+| 6.4 | 注错 4 退出码 0，awk 抓出 3 行 | `build/m4/out.txt` |
+| 7.2 | `timeout` 的 124 与 `--preserve-status` | `timeout --help`（uutils coreutils 0.8.0，`build/timeout-help.txt`） |
+| 7.2 | 1 秒内的行数 | lab 实测，2026-11-13 多次实跑，最近一次 5634457 行 |
+| 8.1 | UNOPTFLAT 的含义，按信号而非按位分析 | 指南 14.3 节（第 6227 至 6241 行）；`build/loopwall.log` |
+| 8.2 | DIDNOTCONVERGE 的含义 | 指南 14.3 节（第 5289 至 5300 行）；`build/loop.txt` |
 | 8.2 | 收敛检查与上限 10000 | `verilated.h` 第 408 至 411 行；`verilated.cpp` 第 4044 至 4052 行、第 4088 至 4091 行；`build/loop/Vloop.cpp` 第 12 行；man 页第 118 行 |
 | 8.2 | 组合环的生成代码 | `build/loop/Vloop___024root__0.cpp` 第 18 至 67 行 |
 
-`build/` 下的生成代码由 check.sh 重建，行号对应 Verilator 5.052；运行库源码路径相对于 `/toolchains/verilator-5052/`（Windows 侧是 `projects/ysyx/tools/verilator-5.052/`）。
+`build/` 下的生成代码行号对应 Verilator 5.052；运行库源码路径相对于 `/toolchains/verilator-5052/`（Windows 侧是 `projects/ysyx/tools/verilator-5.052/`）。
 
 ### 讲义任务对照
 

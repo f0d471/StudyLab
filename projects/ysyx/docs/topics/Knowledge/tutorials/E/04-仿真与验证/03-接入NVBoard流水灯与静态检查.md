@@ -1,7 +1,6 @@
 # 03 接入 NVBoard、流水灯与静态检查
 
     实验目录    labs/E/04-仿真与验证/03-接入NVBoard流水灯与静态检查/
-    基线        check.sh 20 PASS / 0 FAIL / 0 SKIP；mutate.sh 11 OK / 0 BAD（2026-11-14 沙箱实跑）
     环境        沙箱 Ubuntu；Verilator 5.052 2026-09-05 rev 5.052-983a06a；
                 NVBoard（workbench 内置副本）；SDL2 2.32.10
     对应讲义    2607 版 E4「接入NVBoard」「示例: 流水灯(时序逻辑电路)」「静态代码检查」
@@ -14,7 +13,7 @@
 2. 波形与 make（第 02 章）：本章的构建照搬同样的结构，多接一个 NVBoard 库
 3. lint 的警告分级（第 01 章 DECLFILENAME 一节）：本章第 4 节系统化
 
-板上可视行为的判据是学员当面确认（生产指南的规定）：机器只核到"构建成功 + 无头运行
+板上可视行为由学员当面确认（生产指南的规定）：机器只核到"构建成功 + 无头运行
 健康"为止。本章用了 SDL_VIDEODRIVER=dummy 让程序无头跑起来验证主循环不崩，窗口里
 的画面要靠学员看。
 
@@ -23,7 +22,7 @@
 而是板上的开关；输出落到 LED。流水灯是第一个时序电路实验，复位、时钟、分频三件事
 一起练。静态检查收尾，把 lint 从"见过几条警告"变成一套用得起的纪律。
 
-**不学它会怎样**：往后 NPC 的所有外设实验（蜂鸣器、数码管、VGA）都长在 NVBoard 上，
+往后 NPC 的所有外设实验（蜂鸣器、数码管、VGA）都长在 NVBoard 上，
 接不进去就没有以后；时序电路不复位的坑（第 3.3 节实测给你看）会在真项目里以"灯
 全灭、查不出原因"的形态出现；不开 lint 的代价在第 02 章已经量过（两态下位宽截断
 不报运行错），本章把工具链配齐。
@@ -82,12 +81,6 @@ nvboard_bind_pin( &top->f, 1, LD0);
 三行声明变成三次绑定调用，参数依次是：模型成员的地址、位宽、板卡引脚枚举。这个
 生成物让"改引脚分配"变成改三行文本，不用动 C++。
 
-**[判]**（对应 check.sh 第 1 节）
-
-1. auto_pin_bind.py 把 top.nxdc 的三行绑定生成三次 nvboard_bind_pin
-2. 绑定内容是 a 到 SW0、f 到 LD0
-3. NVBoard 库源码编成 build/nvboard.a（nvboard.mk 的产物）
-
 ## 2 双控开关上板
 
 ### 2.1 [做 L2] main 换成板卡驱动
@@ -108,14 +101,6 @@ while (1) {
 （make -f Makefile.nv，产物 build/top/top）后无头验证：SDL_VIDEODRIVER=dummy 下跑
 3 秒仍活着（timeout 收掉时返回 124），说明主循环健康。真窗口里拨 SW0/SW1，LD0 按
 异或亮灭，这半句要学员当面确认。
-
-**[判]**（对应 check.sh 第 2 节）
-
-1. 双控开关的 NVBoard 工程构建成功
-2. 双控开关无头运行 3 秒仍在循环（timeout 返回 124）
-
-注错见红（mutate.sh 实跑）：把 main 里的 `while (1)` 改成 `while (0)`，程序立即退出，
-判据 2 变红；把约束文件里 f 那行删掉，判据 1 节的两条变红。
 
 ## 3 流水灯：时序逻辑与复位
 
@@ -182,18 +167,6 @@ step 2:     led=0008 count=1       step 2:     led=0000 count=1
 也熄灭了。正常分支还能看出分频节拍：复位后第一拍 led 从 0001 移到 0002，此后每
 5000001 拍移一位（0004、0008），肉眼可见的"流动"就是这个节拍。
 
-**[判]**（对应 check.sh 第 3 节）
-
-1. reset(10) 后 led=0001、count=0
-2. 第一个周期 led 移到 0002
-3. 每 5000001 个周期左移一位：0004、0008
-4. 不复位：led 恒为 0000，灯永远不亮
-5. 流水灯的 NVBoard 工程构建成功
-6. 流水灯无头运行 3 秒仍在循环（timeout 返回 124）
-
-注错见红：复位值把 `led <= 1` 写成 `led <= 0`，判据 1、2、3 变红；移位拼接改成
-右移，判据 2、3 变红；分频常数 5000000 改成 500000，判据 3 变红（节拍变快十倍）。
-
 ## 4 静态检查：把 lint 用成纪律
 
 ### 4.1 [做 L1] 参考实现本身就该零警告
@@ -210,7 +183,7 @@ labs 里三个小文件各埋一类问题，实测（5.052）：
    修法：接上驱动，或删掉
 2. 未使用（lint_unused.v）：端口 b 从未被用到。报
    `Warning-UNUSEDSIGNAL: Signal is not used: 'b'`。这一类与 UNDRIVEN 一样默认关闭，
-   `-Wall` 才打开（不带 -Wall 时两者都安静地过，check.sh 单独核过这条）。
+   `-Wall` 才打开（不带 -Wall 时两者都安静地过）。
    修法：用上它，或删掉
 3. 位宽截断（lint_width.v）：4 位赋给 3 位。报
    `Warning-WIDTHTRUNC: ... expects 3 bits ... generates 4 bits`，并且不开 `-Wall`
@@ -222,19 +195,6 @@ labs 里三个小文件各埋一类问题，实测（5.052）：
 处置分级照讲义：代码逻辑类的警告改代码消除；确认不影响逻辑的风格类才用
 `-Wno-<类别>` 单独关。总开着 lint 的理由在第 02 章量过：两态模型里位宽截断不报
 运行错，唯一能在编译期拦住它的就是这条警告。
-
-**[判]**（对应 check.sh 第 4 节）
-
-1. 讲义的流水灯参考实现在 -Wall 下零警告（退出码 0 且无诊断行）
-2. 未驱动的线触发 UNDRIVEN（-Wall 打开且致命）
-3. 未使用的端口触发 UNUSEDSIGNAL（-Wall 打开）
-4. 不带 -Wall 时 UNDRIVEN 与 UNUSEDSIGNAL 都不报（默认关闭）
-5. 位宽截断触发 WIDTHTRUNC（不开 -Wall 也报）
-6. 位宽对齐的版本 -Wall 零警告（退出码 0 且无诊断行）
-
-注错见红：给 light.v 加一个从未使用的端口，判据 1 变红；把 lint_undriven.v 的 w 接上
-常量，判据 2 变红；给"默认关闭"判据的对照命令加上 -Wall，判据 4 变红；把
-lint_clean.v 的输出改窄一位，判据 6 变红。
 
 ## 回看
 
@@ -260,11 +220,11 @@ lint_clean.v 的输出改窄一位，判据 6 变红。
 2. 两个工程共用一个 build/ 目录，第二个工程的 auto_bind.cpp 不重生（比 nxdc 新）：
    按顶层名分目录（Makefile.nv 的 BUILD_DIR 设计，踩过）
 3. `-s` 判日志为空会把 Verilation 统计行当警告：判零警告要看"无 % 开头的诊断行"
-   （check.sh 踩过）
+   （labs 脚本踩过）
 4. UNDRIVEN 在 5.052 默认关，`-Wall` 才开；WIDTHTRUNC 默认开。写"默认"之前跑一遍
    不带 -Wall 的（第 4.2 节，实测纠过）
 5. NVBoard 是库，构建会在 NVBOARD_HOME 下写 build/：workbench 只读，先拷副本再编
-   （check.sh 的做法）
+   （labs 的做法）
 
 ## 交出了什么
 
@@ -272,7 +232,7 @@ lint_clean.v 的输出改窄一位，判据 6 变红。
 testbench 并解释每一拍；用对照实验证明复位的必要性；把 lint 开到最严并分类处置。
 
 往 npc 里接入 NVBoard、把双控开关和流水灯在自己的工程里复现，是讲义任务，归学员
-（判据与本章相同，外加 tracer 记录）。下一章换赛道：不学新工具，学描述电路的纪律
+（核对方式与本章相同，外加 tracer 记录）。下一章换赛道：不学新工具，学描述电路的纪律
 （为什么讲义禁行为建模、两个官方模板怎么用）。
 
 ## 依据
@@ -280,11 +240,11 @@ testbench 并解释每一拍；用对照实验证明复位的必要性；把 lin
 | 正文说法 | 依据 |
 | --- | --- |
 | 三件套关系与 nvboard.mk 的职责 | nvboard/scripts/nvboard.mk 原文；Makefile.nv 构建实测 |
-| auto_bind.cpp 的三行绑定 | labs build/top/auto_bind.cpp 原文（check.sh 第 1 节核对） |
+| auto_bind.cpp 的三行绑定 | labs build/top/auto_bind.cpp 原文 |
 | main_sw/main_light 的循环结构 | labs 文件；无头运行 timeout 124 实测 |
-| 复位后 0001、逐拍移位、不复位恒 0000 | tb_light 实测输出（check.sh 第 3 节，含 5000001 拍的由来推导） |
-| light.v 在 -Wall 下零警告 | labs 实测（check.sh 第 4 节判据 1） |
-| 三类警告的文本与默认开关状态 | labs 实测：UNDRIVEN/UNUSEDSIGNAL 需 -Wall，WIDTHTRUNC 默认开（判据 2~4） |
+| 复位后 0001、逐拍移位、不复位恒 0000 | tb_light 实测输出（含 5000001 拍的由来推导） |
+| light.v 在 -Wall 下零警告 | labs 实测 |
+| 三类警告的文本与默认开关状态 | labs 实测：UNDRIVEN/UNUSEDSIGNAL 需 -Wall，WIDTHTRUNC 默认开 |
 | 讲义对警告分级处置的要求 | 讲义「静态代码检查」小节（任务框） |
 
 ## 讲义任务对照
@@ -293,6 +253,6 @@ testbench 并解释每一拍；用对照实验证明复位的必要性；把 lin
 | --- | --- |
 | 运行 NVBoard 示例、从 make 开始读懂（任务+提示） | 第 1 节（example 通读 + Makefile.nv 缩减版） |
 | 在 NVBoard 上实现双控开关（任务） | 第 2 节；npc 内接入为学员任务 |
-| 将流水灯接入 NVBoard（任务） | 第 3 节；可视判据学员确认 |
+| 将流水灯接入 NVBoard（任务） | 第 3 节；可视化由学员确认 |
 | 通过 Verilator 进行静态代码检查（任务） | 第 4 节 |
 | Verilator 进阶学习（链接） | 超出本章范围，官方文档已入库 |

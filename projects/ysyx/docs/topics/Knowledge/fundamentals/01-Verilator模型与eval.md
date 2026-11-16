@@ -1,8 +1,6 @@
 # 01 Verilator 模型与 eval
 
     实验    labs/fundamentals/01-Verilator模型与eval/
-            check.sh 基线 91 PASS / 0 FAIL / 0 SKIP，本机约 65 秒
-            mutate.sh 基线 16 OK / 0 BAD，本机约 9 分钟
     环境    WSL2 沙箱：Ubuntu 26.04 LTS，内核 6.6.114.1-microsoft-standard-WSL2
             Verilator 5.052 2026-09-05 rev 5.052-983a06a，g++ 15.2.0，GNU Make 4.4.1
             本篇的输出与生成代码均为 2026-11-13 在沙箱里实跑
@@ -28,9 +26,8 @@ cd /workspace/docs/topics/Knowledge/labs/fundamentals/01-Verilator模型与eval
 bash check.sh
 ```
 
-check.sh 先清空 `build/`，再从源码重建本篇的全部产物，逐条核对，最后一行打印 `91 PASS / 0 FAIL / 0 SKIP` 和用时。它的第一段打印环境（Verilator、g++、Make、系统和内核版本），并核对 Verilator 是 5.052：本篇引用的生成代码和行号都来自这个版本，版本不同时这一条变红，后面的行号可能对不上。
+本篇引用的生成代码和行号都来自 Verilator 5.052；版本不同时，后面的行号可能对不上。
 
-同一目录的 mutate.sh 把各节"注错见红"里写的改坏逐个做在副本上，跑副本的 check.sh，核对变红的恰好是正文写的那几条。最后一行打印 `16 OK / 0 BAD` 和用时，本机约 9 分钟。两个脚本共用 `build/`，不要同时跑。
 
 ---
 
@@ -179,17 +176,6 @@ top->eval()                         Vtop.h:61          generated
 
 最后一个名字：`___024root` 里的 `024` 是十六进制数，`$` 的 ASCII 码是 0x24，`___024root` 就是 `$root`（教程 2.1 节）。
 
-### 1.4 [判] 第 1 节
-
-    [ ] build/cc 里正好 13 个文件，清单与 1.1 节一致
-    [ ] Vtop.h：eval() { eval_step(); }；eval_end_step() {}；
-        Vtop___024root* const rootp;；端口写作 VL_IN8(&a,0,0);
-    [ ] Vtop.cpp：a{vlSymsp->TOP.a}；convergeLimit 为 10000；
-        eventsPending() { return false; }
-
-    注错见红：给只做 --cc 的那条命令加上 --converge-limit 20，"收敛上限默认 10000"
-    那条判据变红（mutate.sh 的"上限改20"）。
-
 **这一节搭好的积木**：`new Vtop` 构造出三层对象。`Vtop` 是对外的接口，`Vtop__Syms` 持有根对象 `TOP`，`TOP` 里存着设计的全部状态；端口引用和 `rootp` 都指向 `TOP`。运行库的 `evalImpl()` 通过 `VerilatedModel` 接口回调生成代码里的各区函数。接下来的问题：`TOP` 里的成员用什么 C++ 类型存放。
 
 ---
@@ -321,20 +307,6 @@ struct VlWide final {
 
 `w9` 用 16 位的 `SData` 存，有效的是低 9 位，掩码 `0xfe00` 正好是第 15 至 9 位。`w8`、`w16`、`w32`、`w64` 正好占满整数，没有多余的位，也就没有检查。第 212 行 `w33` 那一条的掩码是 `0ULL`，与 0 相与恒为 0，这条 `if` 永远不成立；按上面的规律，33 位应当用 `0xfffffffe00000000ULL`。这是本版本生成代码的样子：至少本例这个 33 位的输入越界时，调试构建的这条检查也拦不下来。
 
-### 2.4 [判] 第 2 节
-
-    [ ] Vwidths.h：1 位与 8 位是 VL_IN8；9 位与 16 位是 VL_IN16；17 位与 32 位是 VL_IN；
-        33 位与 64 位是 VL_IN64；65 位是 VL_INW(&w65,64,0,3)；输出 o 是 VL_OUTW(&o,64,0,3)
-    [ ] verilated.h：CData、SData、IData、QData、EData 依次是 uint8_t、uint16_t、
-        uint32_t、uint64_t、uint32_t
-    [ ] verilated_types.h：VL_IN8 展开成 CData
-    [ ] 调试构建的宽度检查里，w33 那一条的掩码是 0ULL
-
-    注错见红：把 widths.v 的 w9 改成 8 位（[7:0]，补零的位数跟着改成 57），
-    "9 位 -> VL_IN16"那条判据变红（mutate.sh 的"w9改8位"）；把 w33 改成 32 位
-    （[31:0]，补零的位数跟着改成 33），"33 位 -> VL_IN64"与 w33 掩码两条变红
-    （mutate.sh 的"w33改32位"）。
-
 **这一节搭好的积木**：端口和内部信号按位宽存进能装下它的最小无符号整数，超过 64 位存成 32 位字的数组，低位在前；多出来的高位按约定必须是 0。接下来的问题：设计有层次时，子模块里的信号存在哪里、叫什么。
 
 ---
@@ -430,7 +402,7 @@ build/hr/Vhier
 r=5a
 ```
 
-`%02x` 按两位十六进制打印。第三行 `#include "Vhier___024root.h"` 不能省。`rootp` 的类型是 `Vhier___024root*`，`Vhier.h` 第 14 行只写了 `class Vhier___024root;`，这叫提前声明：编译器只知道有这么一个类，不知道它有哪些成员。成员定义在 `Vhier___024root.h` 里。删掉这一行再构建，g++ 报错（这是 mutate.sh 副本里的输出，删掉一行后 `printf` 那行成了第 11 行）：
+`%02x` 按两位十六进制打印。第三行 `#include "Vhier___024root.h"` 不能省。`rootp` 的类型是 `Vhier___024root*`，`Vhier.h` 第 14 行只写了 `class Vhier___024root;`，这叫提前声明：编译器只知道有这么一个类，不知道它有哪些成员。成员定义在 `Vhier___024root.h` 里。删掉这一行再构建，g++ 报错（删掉一行后 `printf` 那行成了第 11 行）：
 
 ```text
 ../../tb_hier.cpp:11:34: error: invalid use of incomplete type ‘class Vhier___024root’
@@ -441,17 +413,6 @@ incomplete type 指的就是只有提前声明、看不到成员的类型。
 这种读法只适合调试时临时看一眼。`Vtop.h` 第 38 至 44 行的注释把 `rootp` 能访问到的东西称为模型内部（model internals），对外公开的只有用 `public` 一类标记标过的内容。内部成员的名字会随优化变化，第 5 节会看到没有标记的中间信号整个消失。
 
 3.1 节根类里剩下几个成员：`__Vtrigprevexpr___TOP__clk__1` 记录上一次的 `clk`，用来在 act 区判断上升沿（第 7 节）；`__VactTriggered`、`__VnbaTriggered` 是 act 区和 NBA（nonblocking assignment update，非阻塞赋值更新）区的触发位。双控开关是组合电路，根类里没有这两个。
-
-### 3.4 [判] 第 3 节
-
-    [ ] build/h 同样是 13 个文件，没有以 Vhier_sub 开头的
-    [ ] Vhier___024root.h 里有 CData/*7:0*/ hier__DOT__u_sub__DOT__r;
-    [ ] tb_hier.cpp 构建成功
-    [ ] tb_hier 打印 r=5a
-
-    注错见红：把 hier.v 的实例名 u_sub 改成 u_s，后三条变红（mutate.sh 的"实例改名"）：
-    成员名变成 hier__DOT__u_s__DOT__r，tb_hier.cpp 里写的名字不存在，构建失败。
-    删掉 tb_hier.cpp 的 #include "Vhier___024root.h"，后两条变红（"不含根类头文件"）。
 
 **这一节搭好的积木**：子模块默认被并进根类，里面的信号以层次路径命名，`.` 换成 `__DOT__`，经 `rootp` 可以读到。这些名字是内部实现。接下来的问题：这些成员在一次 `eval` 里按什么顺序被计算。
 
@@ -609,7 +570,7 @@ after E1: f=1
 
 每次调用 `eval_ico` 后面都跟着 `dump_triggers__ico` 和两次 `trigger_anySet__ico`。`dump_triggers__ico` 是调试打印本身，它先调用一次 `trigger_anySet__ico` 决定要不要打印 `No 'ico' region triggers active`（`build/tr/Vtop___024root__0__Slow.cpp` 第 146 行），然后逐位打印；第二次 `trigger_anySet__ico` 才是 `eval_ico` 自己用来决定执不执行函数体的那次（教程 4.2 节第 5 点）。
 
-check.sh 用一个函数把每段里的区名按出现顺序抽出来，去掉 `dump_triggers` 与 `trigger_anySet` 这些辅助调用。E1 和 E2 抽出来是：
+把每段里的区名按出现顺序抽出来，去掉 `dump_triggers` 与 `trigger_anySet` 这些辅助调用。E1 和 E2 抽出来是：
 
 ```text
 E1: static initial stl stl sample ico ico act inact nba obs react postponed
@@ -662,23 +623,6 @@ E4 说明 `eval` 判断要不要重算，只看输入有没有变，不看输出
 | postponed | 1 | 1 |
 
 这张表只对本设计成立：有寄存器的设计在 act、nba 区会有触发，循环次数随之变化（第 7 节）。
-
-### 4.5 [判] 第 4 节
-
-    [ ] 轨迹程序退出码 0；trace.txt 一共 136 行
-    [ ] E1 抽出的区序列是 static initial stl stl sample ico ico act inact nba obs
-        react postponed；E1 里有 + Initial
-    [ ] E1：stl 区 index 0（first iteration）为 1；ico 区 index 0（a）、index 1（b）为 1
-    [ ] eval_static 把此刻的 a、b 记成上次的值
-    [ ] eval_ico 在 __VicoDidInit 为 0 时把第 0、1 位强制置 1
-    [ ] E2 的区序列是 sample ico ico act inact nba obs react postponed；没有 Initial；
-        index 1 为 1，index 0 不为 1
-    [ ] E3 没有 index 0 和 1，只有 index 64 的 first iteration
-    [ ] E1 至 E5 之后的 f 依次是 1 0 0 7 1
-    [ ] END 之后是 eval_final
-
-    注错见红：删掉 tb_trace.cpp 里的 top->f = 7;，"f 依次是 1 0 0 7 1"那条变红，
-    实得 1 0 0 0 1：E4 的 f 仍是 E2 算出的 1 ^ 1 = 0（mutate.sh 的"不写f"）。
 
 **这一节搭好的积木**：一次 `eval` 的执行顺序可以直接打印出来。第一次 `eval` 先初始化、跑 Settle 区，之后每次依次是 sample、ico、act 到 react、postponed。本设计的 ico 区每次调用两次，函数体只在输入变化时执行，第一次 `eval` 例外，那时触发位被强制置 1；输出端口只是存储，`eval` 不会去纠正它。接下来的问题：一个区里有多条 `assign` 时，它们按什么顺序执行。
 
@@ -891,29 +835,6 @@ t1=1 f=0
 
 两种标记的区别在于模块会不会被拆出来：给变量加 `public`，连带把它所在的模块也变成 public，模块因此单独成类；只想保住这一个变量、不拆模块，用 `public_flat`（指南 `/*verilator public*/` 一条）。两者都只保住被标记的那个信号。
 
-### 5.4 [判] 第 5 节
-
-    [ ] chain 的真值表：a=0 b=0 f=0，a=0 b=1 f=0，a=1 b=0 f=0，a=1 b=1 f=1
-    [ ] 生成代码里 f 的赋值是一条表达式 ~(a ^ b) & a（去掉空白后比较）
-    [ ] Vchain___024root.h 里没有 t1、t2
-    [ ] public：build/cp 有 19 个文件
-    [ ] public：根类里有 Vchain_pub_chain_pub* chain_pub;
-    [ ] public：模块类里有 t1，没有 t2
-    [ ] tb_pub.cpp 构建成功；打印 t1=1 f=0
-    [ ] public_flat：build/cf 有 15 个文件，没有以 Vchain_flat_chain_flat 开头的
-    [ ] public_flat：根类里有 chain_flat__DOT__t1，没有 t2
-    [ ] public_flat：ico 区里先算 t1、后算 f
-    [ ] tb_flat.cpp 构建成功；打印 t1=1 f=0
-
-    注错见红（都由 mutate.sh 实跑）：
-    t2不取反：chain.v 的 assign t2 = ~t1; 改成 assign t2 = t1;。真值表和"一条表达式"
-      两条变红，实得 a=1 b=0 f=1、a=1 b=1 f=0，也就是 (a ^ b) & a。
-    去掉public：删掉 chain_pub.v 里的 /*verilator public*/。变红 5 条：19 个文件、
-      根类里的指针、模块类里的 t1、tb_pub 构建、tb_pub 打印。没有模块类了，build/cp 只剩 13 个文件。
-    不含模块类头文件：删掉 tb_pub.cpp 的 #include "Vchain_pub_chain_pub.h"，tb_pub 的两条变红。
-    去掉public_flat：删掉 chain_flat.v 里的 /*verilator public_flat*/。变红 5 条：15 个文件、
-      chain_flat__DOT__t1、先算 t1 后算 f、tb_flat 构建、tb_flat 打印。
-
 **这一节搭好的积木**：Verilator 在编译时按依赖关系给组合赋值排序，并把只用一次的中间线代入表达式，所以 `assign` 的书写顺序不影响结果，一次求值就能算对。代价是中间线从模型里消失；需要从 C++ 读时，用 `public` 或 `public_flat` 标记保住它。接下来的问题：依赖关系排不出顺序（组合环）时，反复执行的上限从哪里来。
 
 ---
@@ -1011,17 +932,6 @@ exit=1
 圈数怎样数：`++stlIterCount` 先加一再检查，检查通过才调用 `evalStl`。第 1 至 50 圈的检查都通过，`evalStl` 执行了 50 次；第 51 圈时 51 大于 50，报错退出。退出码 1 的来由见教程 4.5 节（`vl_fatal` 调用 `exit(1)`）。
 
 上限只决定"多久以后放弃"。真的组合环在任何上限下都不会收敛，正确的做法是把环拆掉（教程第 8 节）。
-
-### 6.4 [判] 第 6 节
-
-    [ ] build/lp/Vloop.cpp 里是 convergeLimit 50
-    [ ] 运行报 Settle region did not converge after '--converge-limit' of 50 tries
-    [ ] 退出码 1
-
-    注错见红：构建时去掉 --converge-limit 50，前两条变红，实得 of 10000 tries；
-    退出码仍是 1（mutate.sh 的"不给上限50"）。把 loop.v 里 x 表达式的 ~x
-    改成 x，环还在但 x 不变就算稳定，一次就收敛，"did not converge"与退出码
-    两条变红（mutate.sh 的"环不取反"）。
 
 **这一节搭好的积木**：收敛上限是生成代码时写进模型构造函数的常数，默认 10000，用 `--converge-limit` 改。报错里的区名告诉你环是在哪个区闭合的：第一次 `eval` 里就闭合是 Settle，之后才闭合是 Input combinational。接下来的问题：有寄存器时，act 区和 NBA 区怎样工作，输入和时钟同时变化会怎样。
 
@@ -1180,7 +1090,7 @@ build/sqd/Vseq +verilator+debug > build/seqtrace.txt 2>&1; echo "exit=$?"
 same eval:     q=1
 ```
 
-按第 4 节的办法可以从轨迹里抽出四段的区名，check.sh 核对前三段：
+按第 4 节的办法可以从轨迹里抽出四段的区名，前三段抽出来是：
 
 ```text
 S1: static initial stl sample ico act inact nba obs react postponed
@@ -1205,20 +1115,6 @@ S4: sample ico act inact nba act inact nba obs react postponed
 第一种写法里，数据和时钟在同一个时刻变化。IEEE 1800-2017 第 4.7 节规定，同一时刻的活动事件可以按任意顺序处理，第 4.8 节把这类情况称为竞争（race）：结果取决于仿真器先处理哪一个。标准不保证哪一种结果，Verilator 5.052 在这个例子里取到新值，这只是一次实测，不能依赖。
 
 testbench 的写法由此确定：改数据输入和给上升沿放在两次 `eval` 里。在 `clk=0` 时写好输入并 `eval`，再把 `clk` 改成 1 并 `eval`。
-
-### 7.5 [判] 第 7 节
-
-    [ ] 同一次 eval 里 in 1->0、clk 0->1：q=1
-    [ ] 先改 in 并 eval，再单独给上升沿：q=0
-    [ ] 生成代码里 q 的赋值是 q = 1 & ~in（去掉空白后比较）
-    [ ] seq 轨迹程序退出码 0
-    [ ] S1 的区序列是 static initial stl sample ico act inact nba obs react postponed
-    [ ] S2 的区序列是 sample ico act inact nba act inact nba obs react postponed；
-        act 区因 @(posedge clk) 触发
-    [ ] S3 的区序列是 sample ico act inact nba obs react postponed；act 区没有触发
-
-    注错见红：把 tb_seq.cpp 第一种写法里的 top->in = 0; 删掉，in 保持 1，"same eval"
-    那条变红，实得 q=0（mutate.sh 的"输入不同拍"）。
 
 **这一节搭好的积木**：寄存器的更新在 act 区判沿、在 NBA 区赋值，赋值读的是执行那一刻的输入；NBA 区执行过，运行库就从 act 区再转一圈。数据和时钟同一次 `eval` 里变化是竞争，Verilator 5.052 取新值；testbench 要把数据和时钟沿分到两次 `eval` 里。接下来的问题：时间本身怎样推进，Verilog 里写的 `#10` 能不能用。
 
@@ -1372,53 +1268,11 @@ VlCoroutine Vdly___024root___eval_initial__TOP__Vtiming__0(Vdly___024root* vlSel
 
 本课程的电路由 C++ testbench 驱动，时间由 testbench 推进（教程 4.3 节），设计本身是可综合的 RTL，不写 `#` 延迟。`#` 延迟出现在用 Verilog 写的 testbench 里，读到这样的代码时，用 `--timing` 或 `--binary` 构建。
 
-### 8.4 [判] 第 8 节
-
-    [ ] 不给 timing 选项：构建失败，原因是 NEEDTIMINGOPT
-    [ ] --no-timing（不加 -Wall）：构建失败，原因是 STMTDLY，
-        d2.log 最后一行是 %Error: Exiting due to 1 warning(s)
-    [ ] --binary --no-timing -Wno-STMTDLY：构建成功；VM_TIMING = 0；
-        打印 t=0 hello；$finish at 0s
-    [ ] --binary：生成了 Vdly__main.cpp；Vdly_classes.mk 里 VM_TIMING = 1；
-        Vdly.cpp 的 eventsPending() 去查 __VdlySched
-    [ ] 运行打印 t=10 hello 与 $finish at 10ps，退出码 0
-
-    注错见红：把 dly.v 的 #10 改成 #20，t=10 hello 与 10ps 两条变红，实得 t=20 hello；
-    第四种忽略延迟，仍打印 t=0 hello（mutate.sh 的"延迟改20"）。
-
 **这一节搭好的积木**：Verilator 遇到延迟必须明确选择：`--no-timing` 忽略延迟，所有延迟都当 0，构建时还要再加 `-Wno-STMTDLY` 关掉警告，或者用 `-Wno-fatal` 让警告不致命；`--timing` 把带延迟的过程编译成协程，由延迟调度器在到点时恢复。时间由 `main()` 的循环用 `eventsPending()` 和 `nextTimeSlot()` 推进，`--binary` 会生成这个循环。没有延迟的设计里，推进时间是 testbench 的事。
 
 ---
 
-## 9 注错见红
-
-各节 [判] 块末尾写了改坏哪里、哪几条判据变红。这些说法全部由 mutate.sh 实跑：它把每一种改坏做在一份副本上，跑副本的 check.sh，核对变红的判据恰好是正文写的那几条，不多也不少。变红的判据里用"期望等于"比较的，副本给出的实际值也一并打印。
-
-| 项 | 改坏哪里 | 变红 | 节 |
-| --- | --- | --- | --- |
-| 原样 | 不改，作对照 | 0 条 | |
-| 版本改5.051 | check.sh 里期望的版本改成 5.051 | 1 条：版本 | 开头 |
-| 上限改20 | 只做 `--cc` 的那条命令加 `--converge-limit 20` | 1 条：收敛上限默认 10000 | 1 |
-| w9改8位 | `widths.v` 的 `w9` 改成 8 位 | 1 条：9 位 -> VL_IN16 | 2 |
-| w33改32位 | `widths.v` 的 `w33` 改成 32 位 | 2 条：33 位 -> VL_IN64、w33 掩码 | 2 |
-| 实例改名 | `hier.v` 的 `u_sub` 改成 `u_s` | 3 条：命名、`tb_hier` 构建、`tb_hier` 打印 | 3 |
-| 不含根类头文件 | 删掉 `tb_hier.cpp` 的 `#include "Vhier___024root.h"` | 2 条：`tb_hier` 构建、打印 | 3 |
-| 不写f | 删掉 `tb_trace.cpp` 的 `top->f = 7;` | 1 条：`f` 的序列，实得 1 0 0 0 1 | 4 |
-| t2不取反 | `chain.v` 的 `t2 = ~t1` 改成 `t2 = t1` | 2 条：真值表、一条表达式 | 5 |
-| 去掉public | 删掉 `chain_pub.v` 的 `/*verilator public*/` | 5 条 | 5 |
-| 不含模块类头文件 | 删掉 `tb_pub.cpp` 的 `#include "Vchain_pub_chain_pub.h"` | 2 条：`tb_pub` 构建、打印 | 5 |
-| 去掉public_flat | 删掉 `chain_flat.v` 的 `/*verilator public_flat*/` | 5 条 | 5 |
-| 不给上限50 | 构建 `loop` 时去掉 `--converge-limit 50` | 2 条：上限 50、`of 50 tries` | 6 |
-| 环不取反 | `loop.v` 的 `~x` 改成 `x` | 2 条：did not converge、退出码 1 | 6 |
-| 输入不同拍 | `tb_seq.cpp` 第一种写法不再改 `in` | 1 条：same eval，实得 `q=0` | 7 |
-| 延迟改20 | `dly.v` 的 `#10` 改成 `#20` | 2 条：`t=10 hello`、`10ps` | 8 |
-
-2026-11-13 实跑结果：`16 OK / 0 BAD`，用时 537 秒。
-
-没有对应注错的判据分两种。一种是实验目录里没有可以改坏的源码：第 2 节的类型定义来自运行库头文件，属于工具链本身。另一种是改法一变就连带一大片判据、挑不出"只变红这一条"的：第 1 节的 13 个文件清单与 `Vtop.h`、`Vtop.cpp` 的成员写法（"上限改20"只覆盖收敛上限那一条），第 3 节 `build/h` 的文件清单，第 4 节的轨迹行数、E1 的初始化与触发位、各区序列与退出码（"不写f"只覆盖 `f` 的序列），第 5 节根类头文件里没有 `t1`、`t2`，第 7 节 `q` 的生成表达式与 seq 轨迹的区序列（"输入不同拍"只覆盖同拍那一条），第 8 节 NEEDTIMINGOPT、STMTDLY、`--binary` 与第四种构建的各项（"延迟改20"只覆盖打印的两条）。这些判据核对的都是 Verilator 5.052 生成的代码与输出，靠开头的版本判据兜底：工具链换了版本，版本那一条先变红。
-
----
-## 10 速查
+## 9 速查
 
 | 想做的事 | 做法 | 节 |
 | --- | --- | --- |
@@ -1448,7 +1302,7 @@ VlCoroutine Vdly___024root___eval_initial__TOP__Vtiming__0(Vdly___024root* vlSel
 
 ---
 
-## 11 自检
+## 10 自检
 
 答不上来就回到对应小节，每题都用命令验证。
 
@@ -1469,76 +1323,74 @@ VlCoroutine Vdly___024root___eval_initial__TOP__Vtiming__0(Vdly___024root* vlSel
 
 ---
 
-## 12 依据
+## 11 依据
 
 | 节 | 说法 | 依据 |
 | --- | --- | --- |
-| 开头 | 环境与版本判据 | check.sh 的"环境"段 |
-| 1.1 | 只做 `--cc` 产出 13 个文件 | check.sh 第 1 节；`ls build/cc` |
+| 1.1 | 只做 `--cc` 产出 13 个文件 | `ls build/cc` |
 | 1.1 | 各生成文件的用途 | 指南 15.2 节 Files Read/Written（抽取文本 `E:\Workspace\Temp\ysyx-e4\src\verilator-guide.txt` 第 6489 至 6535 行）；`build/tr/Vtop___024root__0.cpp`、`__0__Slow.cpp` 的函数分布 |
-| 1.1 | public 时多出模块类与 `__Dpi` 文件；`--binary` 多出 `__main.cpp`；构建后的产物 | check.sh 第 5、8 节；`build/cp`、`build/cf`、`build/d` 的文件清单 |
-| 1.2 | 构造函数、端口绑定、`rootp`、收敛上限 | `build/cc/Vtop.cpp` 第 9 至 20 行；check.sh 第 1 节 |
+| 1.1 | public 时多出模块类与 `__Dpi` 文件；`--binary` 多出 `__main.cpp`；构建后的产物 | `build/cp`、`build/cf`、`build/d` 的文件清单 |
+| 1.2 | 构造函数、端口绑定、`rootp`、收敛上限 | `build/cc/Vtop.cpp` 第 9 至 20 行 |
 | 1.2 | `TOP` 是 `Vtop__Syms` 的成员对象 | `build/cc/Vtop__Syms.h` 第 20 至 28 行 |
 | 1.2 | 根类里存放端口与触发记录 | `build/cc/Vtop___024root.h` 第 16 至 24 行 |
 | 1.3 | `Vtop` 继承 `VerilatedModel`，覆盖各区函数 | `build/cc/Vtop.h` 第 17、91 至 110 行；`Vtop.cpp` 第 93 至 95 行 |
 | 1.3 | 调用链 | `Vtop.h` 第 61 行；`Vtop.cpp` 第 59 至 62 行；`verilated.h` 第 390 至 396 行；`verilated.cpp` 第 4055、4088 至 4091 行 |
-| 1.3 | `eval_end_step` 为空；`eventsPending` 为假；`nextTimeSlot` 报错 | `Vtop.h` 第 66、70、72 行；`Vtop.cpp` 第 151、153 至 156 行；check.sh 第 1 节 |
-| 1.3 | `rootp` 指向 `$root`，`__024` 是 `$` 的转义 | 指南 6.1 节（第 938 至 943 行、第 971 至 973 行）；check.sh 第 1 节 |
-| 2.1 | 十个端口的宏 | `build/w/Vwidths.h` 第 34 至 43 行；check.sh 第 2 节 |
+| 1.3 | `eval_end_step` 为空；`eventsPending` 为假；`nextTimeSlot` 报错 | `Vtop.h` 第 66、70、72 行；`Vtop.cpp` 第 151、153 至 156 行 |
+| 1.3 | `rootp` 指向 `$root`，`__024` 是 `$` 的转义 | 指南 6.1 节（第 938 至 943 行、第 971 至 973 行） |
+| 2.1 | 十个端口的宏 | `build/w/Vwidths.h` 第 34 至 43 行 |
 | 2.2 | 宏的定义与适用位宽 | `verilated_types.h` 第 251 至 255、261 至 265 行 |
-| 2.2 | 类型名与底层整数 | `verilated.h` 第 119 至 123 行；check.sh 第 2 节 |
+| 2.2 | 类型名与底层整数 | `verilated.h` 第 119 至 123 行 |
 | 2.3 | `VlWide` 的存储 | `verilated_types.h` 第 80 至 86 行 |
 | 2.3 | 字数公式 | `verilatedos.h` 第 477、478、488 行 |
 | 2.3 | 宽度检查的掩码；`w33` 的掩码为 `0ULL` | `build/w/Vwidths___024root__0.cpp` 第 198 至 217 行 |
 | 3.1 | 子模块并进根类，没有单独的类 | `build/h` 的文件清单 |
-| 3.1、3.2 | 层次信号名 `hier__DOT__u_sub__DOT__r` | `build/h/Vhier___024root.h` 第 16 至 28 行；check.sh 第 3 节 |
+| 3.1、3.2 | 层次信号名 `hier__DOT__u_sub__DOT__r` | `build/h/Vhier___024root.h` 第 16 至 28 行 |
 | 3.2 | `.` 换成 `__DOT__`，因为 C++ 名字里不能有 `.` | 指南 `/*verilator inline_module*/` 一条（第 2510、2511 行） |
-| 3.3 | 读内部成员要包含 `___024root.h`，经 `rootp` 访问 | 指南 6.1.2 节（第 963 至 975 行）；check.sh 第 3 节（`tb_hier` 构建并打印 `r=5a`） |
-| 3.3 | `Vhier.h` 只提前声明根类；漏包含时的报错 | `build/h/Vhier.h` 第 14 行；mutate.sh"不含根类头文件"副本的 `build/hr.log` |
+| 3.3 | 读内部成员要包含 `___024root.h`，经 `rootp` 访问 | 指南 6.1.2 节（第 963 至 975 行）；实测（`tb_hier` 构建并打印 `r=5a`） |
+| 3.3 | `Vhier.h` 只提前声明根类；漏包含时的报错 | `build/h/Vhier.h` 第 14 行；删除包含行后重编的 `build/hr.log` |
 | 3.3 | 未标记 public 的成员是内部实现 | `build/cc/Vtop.h` 第 38 至 44 行的注释 |
 | 4.1 | `VL_DEBUG_IF` 的两种展开 | `verilated_types.h` 第 48 至 65 行 |
 | 4.1 | `+verilator+debug` | man 页 `tools/verilator-5.052/share/man/man1/verilator.1` 第 343 行 |
 | 4.1 | 未编入 `VL_DEBUG` 时的提示；调试打开的提示 | `verilated.cpp` 第 3830 至 3840 行 |
 | 4.1 | 调试消息的前缀与输出通道 | `verilated.cpp` 第 365 至 379 行；`verilated.h` 第 422 行 |
-| 4.2、4.3、4.4 | 轨迹全文 | `build/trace.txt`；check.sh 第 4 节 |
+| 4.2、4.3、4.4 | 轨迹全文 | `build/trace.txt` |
 | 4.3 | 各行来源 | `Vtop.cpp` 第 60、64 至 75 行；`verilated.cpp` 第 4029、4056、4067 至 4079 行 |
-| 4.3 | `eval_static` 记下此刻的 `a`、`b` | `build/tr/Vtop___024root__0__Slow.cpp` 第 7 至 14 行；check.sh 第 4 节 |
-| 4.3 | 第一次 ico 调用强制置 1 | `build/tr/Vtop___024root__0.cpp` 第 30 至 42 行；check.sh 第 4 节 |
+| 4.3 | `eval_static` 记下此刻的 `a`、`b` | `build/tr/Vtop___024root__0__Slow.cpp` 第 7 至 14 行 |
+| 4.3 | 第一次 ico 调用强制置 1 | `build/tr/Vtop___024root__0.cpp` 第 30 至 42 行 |
 | 4.3 | Settle 区的内部位与函数体 | `build/tr/Vtop___024root__0__Slow.cpp` 第 27 至 56 行 |
 | 4.3 | `dump_triggers` 内部调用 `trigger_anySet` | `build/switch/Vtop___024root__0__Slow.cpp` 第 143 至 158 行（教程实验目录） |
 | 4.4 | 函数体只看第 0、1 位 | `build/tr/Vtop___024root__0.cpp` 第 53 行 |
-| 4.4 | `final()` 调用 `eval_final` | `Vtop.cpp` 第 168 至 172 行；check.sh 第 4 节 |
-| 5.1 | chain 的真值表 | check.sh 第 5 节；`build/ch/Vchain` 的输出 |
-| 5.2 | 三条 `assign` 并成一条表达式，`t1`、`t2` 消失 | `build/ch/Vchain___024root__0.cpp` 第 56 至 58 行；`build/ch/Vchain___024root.h` 第 16 至 24 行；check.sh 第 5 节 |
+| 4.4 | `final()` 调用 `eval_final` | `Vtop.cpp` 第 168 至 172 行 |
+| 5.1 | chain 的真值表 | `build/ch/Vchain` 的输出 |
+| 5.2 | 三条 `assign` 并成一条表达式，`t1`、`t2` 消失 | `build/ch/Vchain___024root__0.cpp` 第 56 至 58 行；`build/ch/Vchain___024root.h` 第 16 至 24 行 |
 | 5.2 | 编译时按依赖排序 | 教程 8.1 节；指南 14.3 节 UNOPTFLAT（第 6227 至 6241 行） |
-| 5.3 | `public` 拆出模块类、`public_flat` 留在根类 | `build/cp/Vchain_pub_chain_pub.h` 第 13 至 20 行、`Vchain_pub___024root.h` 第 17 行、`Vchain_pub.h` 第 44 行；`build/cf/Vchain_flat___024root.h` 第 20 行；check.sh 第 5 节 |
+| 5.3 | `public` 拆出模块类、`public_flat` 留在根类 | `build/cp/Vchain_pub_chain_pub.h` 第 13 至 20 行、`Vchain_pub___024root.h` 第 17 行、`Vchain_pub.h` 第 44 行；`build/cf/Vchain_flat___024root.h` 第 20 行 |
 | 5.3 | 变量上的 `public` 连带模块变成 public，否则用 `public_flat` | 指南 `/*verilator public*/ (on variable)` 一条（第 2600 至 2603 行） |
-| 5.3 | `tb_pub`、`tb_flat` 读到 `t1=1 f=0`；`Vchain_pub.h` 只提前声明模块类 | check.sh 第 5 节；`build/cp/Vchain_pub.h` 第 16 行 |
-| 5.3 | `public_flat` 时先算 `t1` 后算 `f` | `build/cf/Vchain_flat___024root__0.cpp` 第 56、57、64、65 行；check.sh 第 5 节 |
-| 6.1 | 上限 50 时的报错与退出码 | check.sh 第 6 节；`build/lp.txt` |
+| 5.3 | `tb_pub`、`tb_flat` 读到 `t1=1 f=0`；`Vchain_pub.h` 只提前声明模块类 | `build/cp/Vchain_pub.h` 第 16 行 |
+| 5.3 | `public_flat` 时先算 `t1` 后算 `f` | `build/cf/Vchain_flat___024root__0.cpp` 第 56、57、64、65 行 |
+| 6.1 | 上限 50 时的报错与退出码 | `build/lp.txt` |
 | 6.2 | 上限写进构造函数；默认 10000 | `build/lp/Vloop.cpp` 第 12 行；`build/cc/Vtop.cpp` 第 12 行；指南 13.1 节 `--converge-limit`（第 3370 至 3372 行） |
 | 6.3 | 两个循环传入的区名；检查与报错 | `verilated.cpp` 第 4044 至 4052、4075 至 4077、4088 至 4091 行；`verilated.h` 第 408 至 411 行 |
 | 6.3 | Settle 区的触发条件与函数体 | `build/lp/Vloop___024root__0__Slow.cpp` 第 28 至 73 行 |
-| 7.1 | 两种写法的 `q` | check.sh 第 7 节；`build/sq/Vseq` 的输出 |
-| 7.2 | act 区判沿、NBA 区赋值、`d` 被代入 | `build/sq/Vseq___024root__0.cpp` 第 54 至 107 行；check.sh 第 7 节 |
-| 7.3 | 四段的区序列；S2 的 act 触发 | `build/seqtrace.txt`；check.sh 第 7 节 |
+| 7.1 | 两种写法的 `q` | `build/sq/Vseq` 的输出 |
+| 7.2 | act 区判沿、NBA 区赋值、`d` 被代入 | `build/sq/Vseq___024root__0.cpp` 第 54 至 107 行 |
+| 7.3 | 四段的区序列；S2 的 act 触发 | `build/seqtrace.txt` |
 | 7.3 | `eval_ico`、`eval_stl` 无条件返回假 | `build/sq/Vseq___024root__0.cpp` 第 46 行；`build/sq/Vseq___024root__0__Slow.cpp` 第 40 行 |
 | 7.3 | act 并入 NBA 触发位；NBA 执行后返回真 | `build/sq/Vseq___024root__0.cpp` 第 71、72、93 至 106 行 |
 | 7.3 | NBA 循环包住 act、inact 循环 | `verilated.cpp` 第 4107 至 4122 行 |
 | 7.4 | 同一时刻活动事件的顺序不确定；竞争 | IEEE 1800-2017 第 4.7、4.8 节（抽取文本 `E:\Workspace\Temp\ysyx-e4\src\1800-clause4.txt` 第 378 至 395 行） |
-| 8.1 | NEEDTIMINGOPT 与 STMTDLY 的输出 | `build/d1.log`、`build/d2.log`；check.sh 第 8 节 |
-| 8.1 | STMTDLY 只在 `--no-timing` 时报，不靠 `-Wall`；警告默认致命 | 指南 14.3 节 STMTDLY（第 6136 行）；指南 13.1 节 `-Wno-fatal`（第 4495 至 4498 行）；check.sh 第 8 节（不加 `-Wall` 也失败） |
-| 8.1 | `--no-timing -Wno-STMTDLY` 的结果 | `build/d3.txt`；`build/d3/Vdly_classes.mk` 第 11 行；check.sh 第 8 节 |
+| 8.1 | NEEDTIMINGOPT 与 STMTDLY 的输出 | `build/d1.log`、`build/d2.log` |
+| 8.1 | STMTDLY 只在 `--no-timing` 时报，不靠 `-Wall`；警告默认致命 | 指南 14.3 节 STMTDLY（第 6136 行）；指南 13.1 节 `-Wno-fatal`（第 4495 至 4498 行）；实测（不加 `-Wall` 也失败） |
+| 8.1 | `--no-timing -Wno-STMTDLY` 的结果 | `build/d3.txt`；`build/d3/Vdly_classes.mk` 第 11 行 |
 | 8.1 | 不给 timing 选项报 NEEDTIMINGOPT；`--no-timing` 忽略延迟并报 STMTDLY | 指南 10.2 节（第 2085、2086、2097 行）；指南 14.3 节（第 5760 至 5762、6129 至 6138 行） |
 | 8.1 | `--binary` 等于 `--main --exe --build --timing` | 指南 13.1 节（第 3298、3299 行）；man 页第 109 行 |
-| 8.1 | 运行输出与退出码 | check.sh 第 8 节 |
+| 8.1 | 运行输出与退出码 | lab 实测 |
 | 8.1 | 默认时间单位 1ps | 指南 13.1 节 `--timescale`（第 4325 至 4327 行） |
 | 8.2 | 生成的 `main()` 循环 | `build/d/Vdly__main.cpp` 第 19 至 36 行；指南 6.7 节（第 1231 至 1237 行） |
 | 8.2 | 有延迟时的 `eventsPending`、`nextTimeSlot`；延迟调度器 | `build/d/Vdly.cpp` 第 149、151 行；`build/d/Vdly___024root.h` 第 24 行 |
 | 8.3 | `initial` 编译成协程，`#10` 变成 `co_await` | `build/d/Vdly___024root__0.cpp` 第 132 至 143 行 |
 | 8.3 | act 区恢复协程 | `build/d/Vdly___024root__0.cpp` 第 58、72、73 行 |
 | 8.3 | `--timing` 需要支持协程的编译器 | 指南 13.1 节（第 4334 至 4339 行） |
-| 8.3 | 链接 `verilated_timing.o`；`VM_TIMING = 1` | `build/d.log` 第 7 行；`build/d/Vdly_classes.mk` 第 11 行；check.sh 第 8 节 |
-| 9 | 十六项注错自检 | mutate.sh，2026-11-13 实跑 16 OK / 0 BAD |
+| 8.3 | 链接 `verilated_timing.o`；`VM_TIMING = 1` | `build/d.log` 第 7 行；`build/d/Vdly_classes.mk` 第 11 行 |
 
-`build/` 下的生成代码由 check.sh 重建，行号对应 Verilator 5.052；运行库源码路径相对于 `/toolchains/verilator-5052/share/verilator/include/`（Windows 侧是 `projects/ysyx/tools/verilator-5.052/share/verilator/include/`）。指南是在线版 5.054 的抽取文本，与 5.052 有出入的行为以实测为准。
+`build/` 下的生成代码行号对应 Verilator 5.052；运行库源码路径相对于 `/toolchains/verilator-5052/share/verilator/include/`（Windows 侧是 `projects/ysyx/tools/verilator-5.052/share/verilator/include/`）。指南是在线版 5.054 的抽取文本，与 5.052 有出入的行为以实测为准。

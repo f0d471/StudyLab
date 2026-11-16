@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="540" viewBox="0 0 860 540">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/>
+    </marker>
+  </defs>
+
+  <style>
+    .box { stroke-width: 1.5; rx: 6; }
+    .src { fill: #eef2f8; stroke: #5b7fa6; }
+    .gen { fill: #fdf3d8; stroke: #c9a227; }
+    .obj { fill: #e9f3ea; stroke: #4e9a66; }
+    .exe { fill: #f3e6e6; stroke: #a8484a; stroke-width: 2; }
+    .file { font: 15px Consolas, "Microsoft YaHei", monospace; fill: #1f2430; text-anchor: middle; dominant-baseline: central; }
+    .lbl  { font: 13px Consolas, "Microsoft YaHei", monospace; fill: #2d3748; }
+    .line { stroke: #4a5568; stroke-width: 1.5; fill: none; }
+  </style>
+
+  <rect x="0" y="0" width="860" height="540" fill="#ffffff"/>
+
+  <!-- 第 1 行：三个输入 -->
+  <rect class="box src" x="55"  y="28" width="230" height="44"/>
+  <text class="file" x="170" y="50">our.v</text>
+
+  <rect class="box src" x="330" y="28" width="200" height="44"/>
+  <text class="file" x="430" y="50">sim_main.cpp</text>
+
+  <rect class="box src" x="545" y="28" width="290" height="62"/>
+  <text class="file" x="690" y="47">verilated.cpp</text>
+  <text class="file" x="690" y="71">verilated_threads.cpp</text>
+
+  <!-- 输入到中间产物 -->
+  <line class="line" x1="170" y1="72"  x2="170" y2="140" marker-end="url(#arr)"/>
+  <text class="lbl" x="180" y="110">verilator --cc</text>
+
+  <line class="line" x1="430" y1="72"  x2="430" y2="300" marker-end="url(#arr)"/>
+  <text class="lbl" x="440" y="190">g++ -c</text>
+
+  <line class="line" x1="690" y1="90"  x2="690" y2="300" marker-end="url(#arr)"/>
+  <text class="lbl" x="700" y="195">g++ -c</text>
+
+  <!-- 第 2 行：Verilator 生成的 C++ -->
+  <rect class="box gen" x="55" y="140" width="230" height="62"/>
+  <text class="file" x="170" y="161">Vour.h Vour.cpp ...</text>
+  <text class="file" x="170" y="185">（5 个 .cpp、Vour.mk）</text>
+
+  <line class="line" x1="170" y1="202" x2="170" y2="300" marker-end="url(#arr)"/>
+  <text class="lbl" x="180" y="255">includer, g++ -c, ar</text>
+
+  <!-- 第 3 行：链接前的产物 -->
+  <rect class="box obj" x="55"  y="300" width="230" height="44"/>
+  <text class="file" x="170" y="322">Vour__ALL.a</text>
+
+  <rect class="box obj" x="330" y="300" width="200" height="44"/>
+  <text class="file" x="430" y="322">sim_main.o</text>
+
+  <rect class="box obj" x="545" y="300" width="290" height="62"/>
+  <text class="file" x="690" y="319">verilated.o</text>
+  <text class="file" x="690" y="343">verilated_threads.o</text>
+
+  <!-- 汇流：三条竖线 + 一条横线，落到链接 -->
+  <line class="line" x1="170" y1="344" x2="170" y2="400"/>
+  <line class="line" x1="430" y1="344" x2="430" y2="400"/>
+  <line class="line" x1="690" y1="362" x2="690" y2="400"/>
+  <line class="line" x1="170" y1="400" x2="690" y2="400"/>
+  <line class="line" x1="430" y1="400" x2="430" y2="450" marker-end="url(#arr)"/>
+  <text class="lbl" x="442" y="430">g++ ... -o Vour</text>
+
+  <!-- 第 4 步的载体：可执行文件 -->
+  <rect class="box exe" x="350" y="450" width="160" height="46"/>
+  <text class="file" x="430" y="473" font-weight="bold">Vour</text>
+</svg>
