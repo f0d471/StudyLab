@@ -1,6 +1,6 @@
-# 02 Verilator 命令行选项速查
+# 04 Verilator 命令行选项速查
 
-    实验目录    labs/fundamentals/02-Verilator命令行选项速查/
+    实验目录    labs/fundamentals/02-Verilator/04-Verilator命令行选项速查/
     环境        沙箱 Ubuntu 26.04 LTS；Verilator 5.052 2026-09-05 rev 5.052-983a06a
     依据        man 页（5.052 版，tools/verilator-5.052/share/man/man1/verilator.1 的 ARGUMENT
                 SUMMARY 节，共 259 行选项）；行为探针为本篇 labs 实测。在线指南是 5.054，
@@ -62,7 +62,7 @@ E/04 各章，本篇是它们背后的案头手册。
 | --- | --- |
 | `--top-module <topname>` | 指定顶层模块名 |
 | `--top <topname>` | --top-module 的别名 |
-| `--pins-bv <bits>` | 指定顶层端口的类型选择（man 页仅此一句；默认端口类型映射见 fundamentals/01 第 2 节，本选项的阈值行为未实测） |
+| `--pins-bv <bits>` | 指定顶层端口的类型选择（man 页仅此一句；默认端口类型映射见 fundamentals/03 第 2 节，本选项的阈值行为未实测） |
 
 ### 2.3 预处理与编译传参
 
@@ -128,7 +128,7 @@ Warnings 章（按 5.054 写，多数条目两版一致；敏感条目以实测�
 ### 2.8 覆盖率
 
 `--coverage` 打开全部；分项有 `--coverage-line`、`--coverage-expr`、`--coverage-fsm`、
-`--coverage-toggle` 等。展开见 [fundamentals/07](07-验证方法学总览.md) 第 2 节。
+`--coverage-toggle` 等。展开见 [fundamentals/06](../04-验证方法学/06-验证方法学总览.md) 第 2 节。
 
 ### 2.9 公开信号（给外部访问内部状态用）
 
@@ -151,7 +151,7 @@ DiffTest 要从 C++ 侧读寄存器堆时用到这一组（教程后段再见）
 | `--runtime-debug` | 打开模型运行期调试（构建多 -ggdb、-fsanitize 等选项，运行期检查生效；实测见教程第 01 章第 4.5 节） |
 | `--stats` | 生成统计文件 |
 | `--threads <threads>` | 模型多线程 |
-| `--converge-limit <loops>` | 组合收敛上限（默认 10000，见 fundamentals/01） |
+| `--converge-limit <loops>` | 组合收敛上限（默认 10000，见 fundamentals/03） |
 | `--help` | 打印帮助 |
 | `--version` | 打印版本 |
 
@@ -178,7 +178,7 @@ DiffTest 要从 C++ 侧读寄存器堆时用到这一组（教程后段再见）
 | -Wno-<message> 关闭单类 | 探针 3 实测退出码 0 |
 | --Mdir、--trace-fst 行为 | 探针 4、5 实测 |
 | --Mdir 默认 obj_dir | 在线指南 obj_dir 说明（5.054 版"If not specified, obj_dir is used"）；教程第 01 章产物同目录名 |
-| --pins-bv 的转述边界 | man 页该行原文仅"Specify types for top-level ports"一句；默认端口类型映射见 fundamentals/01 第 2 节 |
+| --pins-bv 的转述边界 | man 页该行原文仅"Specify types for top-level ports"一句；默认端口类型映射见 fundamentals/03 第 2 节 |
 | --runtime-debug 与 --prefix | man 页 ARGUMENT SUMMARY 两行；运行期检查的实测在教程第 01 章第 4.5 节 |
 | --assert-unroll-limit 的版本分歧 | 在线指南 5.054 标注 Deprecated and has no effect；5.052 man 页仅 Max SVA assertion repetition before erroring，5.052 行为未实测 |
-| 覆盖率分项 | man 页；展开见 fundamentals/07 第 2 节 |
+| 覆盖率分项 | man 页；展开见 fundamentals/06 第 2 节 |

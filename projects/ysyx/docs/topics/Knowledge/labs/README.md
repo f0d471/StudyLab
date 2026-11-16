@@ -6,8 +6,8 @@
 tutorials/E/04-仿真与验证/01-Verilator把电路变成程序.md
 labs/E/04-仿真与验证/01-Verilator把电路变成程序/
 
-fundamentals/01-Verilator模型与eval.md
-labs/fundamentals/01-Verilator模型与eval/
+fundamentals/02-Verilator/03-Verilator模型与eval.md
+labs/fundamentals/02-Verilator/03-Verilator模型与eval/
 ```
 
 ## 实验目录里有什么
@@ -32,7 +32,7 @@ labs/fundamentals/01-Verilator模型与eval/
 | 实验目录 | check.sh 基线 | mutate.sh 基线 | 本机耗时 |
 | --- | --- | --- | --- |
 | E/04-仿真与验证/01-Verilator把电路变成程序 | 82 PASS / 0 FAIL / 0 SKIP | 25 OK / 0 BAD | check.sh 约 32 秒，mutate.sh 约 15 分钟 |
-| fundamentals/01-Verilator模型与eval | 91 PASS / 0 FAIL / 0 SKIP | 16 OK / 0 BAD | check.sh 约 65 秒，mutate.sh 约 9 分钟 |
+| fundamentals/02-Verilator/03-Verilator模型与eval | 91 PASS / 0 FAIL / 0 SKIP | 16 OK / 0 BAD | check.sh 约 65 秒，mutate.sh 约 9 分钟 |
 
 ## 规则
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# fundamentals/02（Verilator 命令行选项速查）的判据自动核对
+# fundamentals/04（Verilator 命令行选项速查）的判据自动核对
 #
 # 用法：在沙箱里 bash check.sh
 # 三部分：版本与 man 页在位；第 2 节十个选项组逐组核对存在性；第 3 节五条行为探针实测。

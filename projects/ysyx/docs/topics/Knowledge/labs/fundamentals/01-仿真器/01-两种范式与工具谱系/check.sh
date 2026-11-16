@@ -1,5 +1,5 @@
 #!/bin/bash
-# fundamentals/00（仿真器的两种范式与工具谱系）的判据自动核对
+# fundamentals/01（仿真器的两种范式与工具谱系）的判据自动核对
 #
 # 用法：在沙箱里 bash check.sh
 # 三组：1800 条款引用核对（对书签摘录）；四态语义实测（iverilog 的 x 传染）；

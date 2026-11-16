@@ -1,5 +1,5 @@
 #!/bin/bash
-# fundamentals/01（Verilator 生成的模型与 eval）的判据自动核对
+# fundamentals/03（Verilator 生成的模型与 eval）的判据自动核对
 #
 # 用法：在沙箱里 bash check.sh
 # 从源码重建一切（产物清单、端口类型、层次命名、eval 调试轨迹、静态排序、收敛上限、

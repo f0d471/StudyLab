@@ -1,5 +1,5 @@
 #!/bin/bash
-# fundamentals/07（验证方法学总览）的判据自动核对
+# fundamentals/06（验证方法学总览）的判据自动核对
 #
 # 用法：在沙箱里 bash check.sh
 # 本篇是地图型篇目：判据形态是"引用可核对"，不是电路实验。
@@ -25,7 +25,7 @@ command -v verilator >/dev/null 2>&1 || { echo "找不到 verilator：本脚本�
 PDF=/workspace/docs/sources/systemverilog/sv-1800-2017.pdf
 MAN=/workspace/tools/verilator-5.052/share/man/man1/verilator.1
 COVMAN=/workspace/tools/verilator-5.052/share/man/man1/verilator_coverage.1
-CH=/workspace/docs/topics/Knowledge/fundamentals/07-验证方法学总览.md
+CH=/workspace/docs/topics/Knowledge/fundamentals/04-验证方法学/06-验证方法学总览.md
 TOC=1800-toc-excerpt.md
 SHA=12e3dc7bafafca28af2b89ebc2761fb7a606d68716cf04c2d93c8617c78eebec
 

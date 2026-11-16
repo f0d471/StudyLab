@@ -1,5 +1,5 @@
 #!/bin/bash
-# fundamentals/06（Reg 与 MuxKey 模板逐行拆）的判据自动核对
+# fundamentals/05（Reg 与 MuxKey 模板逐行拆）的判据自动核对
 #
 # 用法：在沙箱里 bash check.sh
 # 三组：Reg 模板的复位/保持/采样行为；MuxKey 的命中/不命中/键重复/参数错位；

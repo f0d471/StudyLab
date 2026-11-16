@@ -18,7 +18,7 @@
 - Verilog：`module`、端口、`assign`，HDLBits 的程度。
 - Linux 终端：输出重定向 `>`、`2>`、`2>&1` 与管道 `|`。
 
-[fundamentals/01 Verilator 模型与 eval](../../../fundamentals/01-Verilator模型与eval.md) 可以读完本章再看。它把本章第 3、4、8 节用到的机制展开：生成文件全表、端口宽度与 C++ 类型的对应、`eval` 每个区的实测轨迹、组合逻辑的静态排序、收敛上限，以及时钟和延迟。
+[fundamentals/03 Verilator 模型与 eval](../../../fundamentals/02-Verilator/03-Verilator模型与eval.md) 可以读完本章再看。它把本章第 3、4、8 节用到的机制展开：生成文件全表、端口宽度与 C++ 类型的对应、`eval` 每个区的实测轨迹、组合逻辑的静态排序、收敛上限，以及时钟和延迟。
 
 **这一章在整条链里的位置**：上接 E4 的环境检查（[00-环境四查](../../../labs/E/04-仿真与验证/00-环境四查.md)：Verilator 5.052 在位，NPC_HOME 已设）。本章搭的是此后所有仿真共用的骨架：Verilator 把一个 Verilog 模块翻译成一个 C++ 类，一段 C++ 主循环（testbench）反复做四件事，写输入、调用 `eval`、读输出、检查。后面的内容都往这个循环里加东西：波形是在循环里记录信号，NVBoard 是在循环里把信号接到虚拟板卡，DiffTest 是在循环里把处理器的状态和参考模型逐步比较。下一章讲波形和 Makefile，对应讲义"打印并查看波形"与"编写Makefile"两小节。
 
@@ -417,7 +417,7 @@ verilator --cc --exe --build -j 0 -Wall --Mdir build/switch tb_switch.cpp top.v
 
 宏展开以后，`VL_IN8(&a,0,0);` 变成 `CData &a;`。`msb` 与 `lsb` 两个参数（这里都是 0，即 Verilog 的 `[0:0]`）在展开时被丢掉，只起说明作用。`CData` 又定义在 `verilated.h` 第 119 行：`using CData = uint8_t;`。所以端口 `a` 的 C++ 类型是 `uint8_t &`。
 
-第一，1 位的端口用 8 位整数存。C++ 里最小的整数类型就是 8 位，1 到 8 位宽的端口都用 `CData`；更宽的端口依次用 16 位的 `SData`、32 位的 `IData`、64 位的 `QData`（`verilated.h` 第 119 至 123 行），超过 64 位用数组 `VlWide`（`verilated_types.h` 第 255 行的 `VL_INW`；对照表见 fundamentals/01 第 2 节）。8 位里只有最低位是这个端口的值，其余 7 位按约定必须是 0。第 4.5 节会看到不守这个约定的后果。
+第一，1 位的端口用 8 位整数存。C++ 里最小的整数类型就是 8 位，1 到 8 位宽的端口都用 `CData`；更宽的端口依次用 16 位的 `SData`、32 位的 `IData`、64 位的 `QData`（`verilated.h` 第 119 至 123 行），超过 64 位用数组 `VlWide`（`verilated_types.h` 第 255 行的 `VL_INW`；对照表见 fundamentals/03 第 2 节）。8 位里只有最低位是这个端口的值，其余 7 位按约定必须是 0。第 4.5 节会看到不守这个约定的后果。
 
 第二，`&` 表示引用。C++ 的引用是一个已有变量的另一个名字：读写引用，就是读写它绑定的那个变量。可以把它看成一个自动解引用、并且不能改指向的指针。绑定发生在构造函数里，`build/switch/Vtop.cpp` 第 13 至 15 行：
 
@@ -605,7 +605,7 @@ bool Vtop___024root___eval_ico(Vtop___024root* vlSelf, CData/*0:0*/ firstIterati
 2. 第 30 至 35 行：算出两个触发位。第 0 位是"`a` 和上次记下的值不同"，第 1 位是"`b` 和上次记下的值不同"。上次的值存在 `__Vtrigprevexpr___TOP__a__0` 与 `__Vtrigprevexpr___TOP__b__0` 两个成员里。
 3. 第 36、37 行：把当前的 `a`、`b` 记下来，留给下一次比较。
 4. 第 38 至 42 行：标志 `__VicoDidInit` 为 0 说明这是模型的第一次 ico 调用。这时不管比较结果如何，两个触发位都强制置 1，同时把标志置 1，以后不再进来。下面推 P2 时会看到，第一次 `eval` 里只靠比较是看不到输入变化的，这两行让 ico 区的逻辑在第一次 `eval` 里一定执行一次。
-5. 第 49 行：`trigger_anySet__ico`（同一文件第 111 至 124 行）把 `__VicoTriggered` 的两个 64 位字逐个检查，有一位是 1，`__VicoExecute` 就为真。第 25 至 27 行那个内部位也算在内，所以在本设计里，每次 `eval` 的 ico 区第一次调用总是返回真，ico 区每次 `eval` 都要调用两次。没有 ico 逻辑的设计不是这样：fundamentals/01 第 7 节的时序电路里，`eval_ico` 直接返回假。
+5. 第 49 行：`trigger_anySet__ico`（同一文件第 111 至 124 行）把 `__VicoTriggered` 的两个 64 位字逐个检查，有一位是 1，`__VicoExecute` 就为真。第 25 至 27 行那个内部位也算在内，所以在本设计里，每次 `eval` 的 ico 区第一次调用总是返回真，ico 区每次 `eval` 都要调用两次。没有 ico 逻辑的设计不是这样：fundamentals/03 第 7 节的时序电路里，`eval_ico` 直接返回假。
 6. 第 53 至 59 行：`a` 或 `b` 有一个变了（`3ULL` 是 64 位无符号整数字面量 3，二进制 11，同时看第 0、1 位），就执行 `f = a ^ b`。
 7. 第 62 行：返回"这一次有没有执行"。`evalImpl()` 的 `do ... while` 看到真，就再调用一次。
 
@@ -621,7 +621,7 @@ P3 同样调用两次：
 1. 第一次调用：`a`、`b` 和上次记下的值相同，第 0、1 位都是 0，`f = a ^ b` 不执行；但这是本轮第一次调用，内部位是 1，函数照样返回真。
 2. 第二次调用：内部位也变成 0，没有任何一位触发，返回假，循环结束。
 
-`f` 在两次调用里都没有被重算，保持 P2 算出的 1。每次 `eval` 里各区实际被调用几次，fundamentals/01 第 4 节用运行库的调试输出逐行看了一遍。
+`f` 在两次调用里都没有被重算，保持 P2 算出的 1。每次 `eval` 里各区实际被调用几次，fundamentals/03 第 4 节用运行库的调试输出逐行看了一遍。
 
 ### 4.3 为什么不需要时钟
 
@@ -629,7 +629,7 @@ P3 同样调用两次：
 
 双控开关是组合电路：输出只由当前的输入决定，电路里没有需要保存的状态。testbench 每写一组新输入、调用一次 `eval`，`f` 就在这次调用里算好。"什么时候算"由 testbench 决定，调用 `eval` 的那一刻就是。
 
-时钟在电路里有寄存器时才需要。寄存器只在时钟沿更新，testbench 要自己把时钟输入从 0 写成 1、再从 1 写成 0，每改一次调用一次 `eval`，寄存器的更新才会发生。在 Verilator 的模型里，时钟就是又一个输入，它的变化触发执行 `always @(posedge clk)` 那部分逻辑的区。输入与时钟同一次 `eval` 里变化时的先后关系，fundamentals/01 第 7 节有实测；时序电路的 testbench 留到流水灯那一章。
+时钟在电路里有寄存器时才需要。寄存器只在时钟沿更新，testbench 要自己把时钟输入从 0 写成 1、再从 1 写成 0，每改一次调用一次 `eval`，寄存器的更新才会发生。在 Verilator 的模型里，时钟就是又一个输入，它的变化触发执行 `always @(posedge clk)` 那部分逻辑的区。输入与时钟同一次 `eval` 里变化时的先后关系，fundamentals/03 第 7 节有实测；时序电路的 testbench 留到流水灯那一章。
 
 P4 的 0 说明了另一件事：两次 `eval` 以后，仿真时间仍是 0。仿真时间是上下文里的一个计数器，`eval` 不推进它；要推进，由 testbench 调用 `contextp->timeInc(n)`，它就是把计数器加上 `n`（`verilated.h` 第 746 行）。本章用不到时间，下一章记录波形时要用。
 
@@ -1156,7 +1156,7 @@ verilator --cc --exe --build -j 0 -Wall --Mdir build/loopwall tb_loop.cpp loop.v
 2. 五行 `Example path`：环上的一条路径，从 `f` 出发，经过第 6 行的连续赋值（`ASSIGNW`，第 12 列是 `=`），到第 5 行的 `x`，再经过第 7 行的连续赋值，回到 `f`。
 3. `%Error: Exiting due to 1 warning(s)`：和 6.3 节一样，警告默认致命。
 
-UNOPTFLAT 的意思要从 Verilator 怎样排组合逻辑说起。它在编译时按依赖关系给所有组合赋值排一个固定顺序，先算被依赖的，后算依赖别人的，这样每次求值每条赋值只需要执行一次。环上的赋值排不出这样的顺序，Verilator 只好放弃这个优化，改为反复执行直到稳定，并发出这条警告。它的分析按整个信号进行，不区分每一位，所以有些按位看并不成环的写法（例如 `wire [2:0] x = {x[1:0], shift_in};`）也会被报出来，那种情况只是变慢；`loop.v` 是真的环。排序与反复执行的细节见 fundamentals/01 第 5、6 节。
+UNOPTFLAT 的意思要从 Verilator 怎样排组合逻辑说起。它在编译时按依赖关系给所有组合赋值排一个固定顺序，先算被依赖的，后算依赖别人的，这样每次求值每条赋值只需要执行一次。环上的赋值排不出这样的顺序，Verilator 只好放弃这个优化，改为反复执行直到稳定，并发出这条警告。它的分析按整个信号进行，不区分每一位，所以有些按位看并不成环的写法（例如 `wire [2:0] x = {x[1:0], shift_in};`）也会被报出来，那种情况只是变慢；`loop.v` 是真的环。排序与反复执行的细节见 fundamentals/03 第 5、6 节。
 
 去掉 `-Wall` 也一样失败：UNOPTFLAT 默认就开着，构建日志 `build/loopnowall.log` 里是同样的警告。
 
@@ -1314,7 +1314,7 @@ Aborting...
 | 4.2 | ico 区的触发与计算；其余各区返回 0 | `build/switch/Vtop___024root__0.cpp` 第 18 至 63 行、第 65 至 103 行 |
 | 4.2 | act 到 react 五个区的循环层层嵌套 | `verilated.cpp` 第 4095 至 4126 行 |
 | 4.2 | 第一次 `eval`：`eval_static` 记下此刻的输入，Settle 区先算出 `f`，ico 区第一次调用强制置 1 | `build/switch/Vtop___024root__0__Slow.cpp` 第 7 至 14 行、第 27 至 56 行；`build/switch/Vtop___024root__0.cpp` 第 38 至 42 行 |
-| 4.2 | 没有 ico 逻辑的设计里 `eval_ico` 直接返回假 | fundamentals/01 第 7.3 节及其依据表 |
+| 4.2 | 没有 ico 逻辑的设计里 `eval_ico` 直接返回假 | fundamentals/03 第 7.3 节及其依据表 |
 | 4.2 | Active、Inactive、NBA、Observed、Reactive、Postponed 等调度区 | IEEE 1800-2017 第 4.4.1、4.4.2 节（抽取文本 `E:\Workspace\Temp\ysyx-e4\src\1800-clause4.txt` 第 129 至 182 行；该文本把这两节的标题误印为 3.4.1、3.4.2，见第 129、140 行） |
 | 4.3 | 仿真时间由 `timeInc` 推进 | `verilated.h` 第 746 行；`build/eval.txt` 的 P4 |
 | 4.4 | Verilator 基本上是二值仿真器 | 指南 10.3.8 节 Unknown States（抽取文本第 2141 至 2143 行） |

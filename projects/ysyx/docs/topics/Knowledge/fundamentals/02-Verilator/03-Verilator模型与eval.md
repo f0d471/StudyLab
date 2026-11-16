@@ -1,6 +1,6 @@
-# 01 Verilator 模型与 eval
+# 03 Verilator 模型与 eval
 
-    实验    labs/fundamentals/01-Verilator模型与eval/
+    实验    labs/fundamentals/02-Verilator/03-Verilator模型与eval/
     环境    WSL2 沙箱：Ubuntu 26.04 LTS，内核 6.6.114.1-microsoft-standard-WSL2
             Verilator 5.052 2026-09-05 rev 5.052-983a06a，g++ 15.2.0，GNU Make 4.4.1
             本篇的输出与生成代码均为 2026-11-13 在沙箱里实跑
@@ -22,7 +22,7 @@
 **怎么跟着做**：在沙箱里进入实验目录，先跑 check.sh：
 
 ```bash
-cd /workspace/docs/topics/Knowledge/labs/fundamentals/01-Verilator模型与eval
+cd /workspace/docs/topics/Knowledge/labs/fundamentals/02-Verilator/03-Verilator模型与eval
 bash check.sh
 ```
 

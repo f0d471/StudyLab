@@ -1,5 +1,5 @@
 #!/bin/bash
-# fundamentals/05（波形格式与 GTKWave）的判据自动核对
+# fundamentals/02（波形格式与 GTKWave）的判据自动核对
 #
 # 用法：在沙箱里 bash check.sh
 # 核对 VCD 的文本结构（头部两行、信号代号、定义段与时间戳的先后、时间戳计数）
