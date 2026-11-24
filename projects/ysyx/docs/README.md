@@ -14,7 +14,7 @@
 | 查看 RISC-V 官方手册的来源与版本 | [riscv-spec-source.json](registry/riscv-spec-source.json) |
 | 查看 Verilator 文档与 IEEE 1800 标准的来源与版本 | [verilator-guide-source.json](registry/verilator-guide-source.json)、[sv1800-source.json](registry/sv1800-source.json) |
 | 查看下载范围、统计和缺失项 | [离线镜像记录](offline-report.md) |
-| 查看环境和日常命令 | [平台开发环境](../../../docs/通用学习平台.md)、[主工程日常实验](../ysyx-workbench/docs/日常实验.md) |
+| 查看环境和日常命令 | [平台开发环境](../../../docs/通用学习平台.md)、[主工程环境与日常使用](../ysyx-workbench/docs/开发环境.md) |
 
 离线网页可以直接用浏览器打开，不需要启动服务器。站外视频、文章、云文档和账号服务保留在线链接，访问时仍需网络。镜像只代表下载时的内容；当前课程要求有变化时，以官方讲义为准，并明确采用的版本。
 

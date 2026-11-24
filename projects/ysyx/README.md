@@ -49,4 +49,4 @@ RT-Thread 来源与版本集中登记在 [rt-thread-source.json](docs/registry/r
 
 默认进入 /workspace/ysyx-workbench，AM_HOME 等由 project.json 注入。RTT 适配目录位于 ../rt-thread-am/bsp/abstract-machine；编译、仿真、调试均在该隔离环境中进行。
 
-现行环境见 [平台开发环境](../../docs/通用学习平台.md)，交互用法见 [日常实验](ysyx-workbench/docs/日常实验.md)，初始化历史见 [主工程开发环境](ysyx-workbench/docs/开发环境.md)。当前运行日志由平台写入 StudyLab/logs/ysyx/；迁移前的项目 logs/ 保留原文。
+现行环境见 [平台开发环境](../../docs/通用学习平台.md)，开发环境与日常用法见 [主工程开发环境](ysyx-workbench/docs/开发环境.md)。当前运行日志由平台写入 StudyLab/logs/ysyx/；迁移前的项目 logs/ 保留原文。
