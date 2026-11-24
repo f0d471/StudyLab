@@ -11,8 +11,8 @@
 | 阅读 PA 实验 | [PA 实验主页](site/ysyx.oscc.cc/docs/ics-pa/index.html) |
 | 搜索全部已下载页面 | [离线首页与全文搜索](site/index.html) |
 | 查看学习记录的组织方式（教程/基础/实验/工程文档） | [学习记录 README](topics/README.md) |
-| 查看 RISC-V 官方手册的来源与版本 | [riscv-spec-source.json](riscv-spec-source.json) |
-| 查看 Verilator 文档与 IEEE 1800 标准的来源与版本 | [verilator-guide-source.json](verilator-guide-source.json)、[sv1800-source.json](sv1800-source.json) |
+| 查看 RISC-V 官方手册的来源与版本 | [riscv-spec-source.json](registry/riscv-spec-source.json) |
+| 查看 Verilator 文档与 IEEE 1800 标准的来源与版本 | [verilator-guide-source.json](registry/verilator-guide-source.json)、[sv1800-source.json](registry/sv1800-source.json) |
 | 查看下载范围、统计和缺失项 | [离线镜像记录](offline-report.md) |
 | 查看环境和日常命令 | [平台开发环境](../../../docs/通用学习平台.md)、[主工程日常实验](../ysyx-workbench/docs/日常实验.md) |
 
@@ -45,16 +45,18 @@ docs/
 │   └── ysyx.oscc.cc/
 ├── qa/                       离线阅读检查留下的截图
 ├── offline-report.md         下载与核对结果的可读报告
-├── manifest.json             下载文件与来源的登记清单
-├── progress.json             抓取工具的运行进度
-├── verification.json         本地链接、依赖与缺失项核对结果
-├── content-check.json        原网页与离线网页的正文/结构比较结果
-├── external-links.json       保留在线访问的站外链接
-├── browser-check.json        浏览器断网抽查记录与截图索引
-├── rt-thread-source.json     RT-Thread 依赖仓的来源与版本登记
-├── riscv-spec-source.json    RISC-V 官方手册的来源、版本与摘要登记
-├── verilator-guide-source.json Verilator 用户指南的来源、版本与章节用途登记
-└── sv1800-source.json        IEEE 1800-2017 标准的来源、版本、校验和与用途登记
+├── registry/                 手工维护的来源登记；Git 收录
+│   ├── rt-thread-source.json     RT-Thread 依赖仓的来源与版本登记
+│   ├── riscv-spec-source.json    RISC-V 官方手册的来源、版本与摘要登记
+│   ├── verilator-guide-source.json Verilator 用户指南的来源、版本与章节用途登记
+│   └── sv1800-source.json        IEEE 1800-2017 标准的来源、版本、校验和与用途登记
+└── mirror/                   镜像工具的工作文件；本地保留，不入 Git
+    ├── manifest.json         下载文件与来源的登记清单
+    ├── progress.json         抓取工具的运行进度
+    ├── verification.json     本地链接、依赖与缺失项核对结果
+    ├── content-check.json    原网页与离线网页的正文/结构比较结果
+    ├── external-links.json   保留在线访问的站外链接
+    └── browser-check.json    浏览器断网抽查记录与截图索引
 ~~~
 
 上述目录均已存在。topics/ 下的教程、基础、实验与工程文档随学习进度建立，不提前写空篇目。
@@ -93,17 +95,17 @@ site 的路径保留来源网站结构，便于从官方链接定位本地页面
 | --- | --- | --- |
 | README.md | 人工 | 修改目录说明、入口和维护规则；镜像工具不得覆盖 |
 | topics/ | 人工 | 学习记录区（Knowledge 与 Engineering）；收录与体例规则见 [topics README](topics/README.md) |
-| riscv-spec-source.json | 手册登记过程 | 手册版本变化后重新下载、更新登记并复核摘要；同一来源不另建重复登记 |
-| rt-thread-source.json | 依赖登记过程 | 依赖版本改变后核对并更新；同一来源不另建重复登记 |
-| verilator-guide-source.json、sv1800-source.json | 手册登记过程 | 手册或标准换版本后更新登记；sources/ 下的文件变化时重算 sha256 |
+| registry/riscv-spec-source.json | 手册登记过程 | 手册版本变化后重新下载、更新登记并复核摘要；同一来源不另建重复登记 |
+| registry/rt-thread-source.json | 依赖登记过程 | 依赖版本改变后核对并更新；同一来源不另建重复登记 |
+| registry/verilator-guide-source.json、registry/sv1800-source.json | 手册登记过程 | 手册或标准换版本后更新登记；sources/ 下的文件变化时重算 sha256 |
 | site/、originals/ | mirror_docs.py | 通过工具抓取、重生成，不在镜像正文内插入个人笔记 |
-| manifest.json | mirror_docs.py | 保存来源、状态、路径和下载登记；不手改成功/失败状态 |
-| progress.json | mirror_docs.py | 记录抓取队列与本次处理进度；它不是课程进度 |
-| verification.json | mirror_docs.py | 保存最终核对结果，定位缺失链接和资源 |
-| content-check.json | mirror_docs.py | 保存原文与离线内容比较结果 |
-| external-links.json | mirror_docs.py | 保存没有递归复制的站外链接 |
+| mirror/manifest.json | mirror_docs.py | 保存来源、状态、路径和下载登记；不手改成功/失败状态 |
+| mirror/progress.json | mirror_docs.py | 记录抓取队列与本次处理进度；它不是课程进度 |
+| mirror/verification.json | mirror_docs.py | 保存最终核对结果，定位缺失链接和资源 |
+| mirror/content-check.json | mirror_docs.py | 保存原文与离线内容比较结果 |
+| mirror/external-links.json | mirror_docs.py | 保存没有递归复制的站外链接 |
 | offline-report.md | 镜像工具；现有历史附录保留 | 可读的下载报告；刷新时可以重生成，不承载管理规则 |
-| browser-check.json、qa/ | 浏览器检查过程 | 保留实际检查时间、范围和截图；不能用旧记录宣称新页面已验证 |
+| mirror/browser-check.json、qa/ | 浏览器检查过程 | 保留实际检查时间、范围和截图；不能用旧记录宣称新页面已验证 |
 
 manifest 是“登记清单”，verification 是“核对结果”。progress 的运行计数和 verification 的最终缺失统计口径不同，不能仅凭某个数字判断整份资料是否完整。
 
@@ -122,14 +124,14 @@ manifest 是“登记清单”，verification 是“核对结果”。progress �
 | 工程改造文档 | topics/Engineering/ 的 Todo / Bugs / TechReports | 流转与提交同步规则见其 README |
 | 学习记录配图 | 截图放所在文档目录内的 assets/<主题>/；Knowledge 的 SVG 示意图放所在目录的 fig/ | 图片名称说明内容；在正文引用，不单独堆无说明截图 |
 | 官方讲义及站内资源 | 镜像工具管理的 site/、originals/ | 保留原路径和来源；更新工具，不手工拼接另一套镜像 |
-| 外部规格手册等下载资料 | sources/<来源>/，本地保留不入 Git | 在 <名称>-source.json 登记来源、版本、摘要与用途 |
-| 新依赖的来源与固定版本 | 优先使用该依赖已有的来源登记 | 外置项目依赖可采用 <依赖名>-source.json，说明 URL、分支/版本、提交、用途与范围 |
+| 外部规格手册等下载资料 | sources/<来源>/，本地保留不入 Git | 在 registry/<名称>-source.json 登记来源、版本、摘要与用途 |
+| 新依赖的来源与固定版本 | 优先使用该依赖已有的来源登记 | 外置项目依赖可采用 registry/<依赖名>-source.json，说明 URL、分支/版本、提交、用途与范围 |
 | 主工程的构建、接口和运行说明 | ../ysyx-workbench/docs/ | 随对应源码仓维护，本目录引用入口 |
 | 通用平台环境与隔离规则 | ../../../docs/ | 项目内只链接，不复制平台说明 |
 | 可复用脚本 | ../tools/ | 在工具 README 登记，不将脚本散放在资料目录 |
 | 程序日志、波形、编译产物与大文件 | 对应 logs/、cache/ 或已有忽略目录 | 文档引用证据位置和范围，不把它们混进笔记 |
 
-根目录只保留本入口、镜像工具固定的清单/报告和项目级依赖来源登记。新写的课程笔记与专题进入上述分类目录；新类别需要在本页说明用途后再加入。
+根目录只保留本入口和 offline-report.md；镜像工具的工作文件在 mirror/，来源登记在 registry/。新写的课程笔记与专题进入上述分类目录；新类别需要在本页说明用途后再加入。
 
 ### 自编文档的最低要求
 
@@ -182,14 +184,14 @@ manifest 是“登记清单”，verification 是“核对结果”。progress �
 - topics/ 下的 Markdown（Engineering 与 Knowledge 的全部篇目与 README）；
 - topics/ 下 fig/ 目录里的 SVG 配图；
 - Knowledge/labs/ 下的实验源码与判据脚本（`.v` `.sv` `.c` `.cpp` `.h` `.sh` `Makefile`），其中的 build/ 不收录；
-- rt-thread-source.json、riscv-spec-source.json、verilator-guide-source.json、sv1800-source.json。
+- registry/ 下的四个来源登记（rt-thread、riscv-spec、verilator-guide、sv1800）。
 
 本地保留且默认不收录：
 
 - site/、originals/ 与镜像使用的资源；
 - sources/ 下载的规格手册等原始资料；
-- 下载清单、运行进度、核对 JSON 和 offline-report.md；
-- 浏览器检查记录与截图。
+- mirror/ 下的下载清单、运行进度与核对 JSON；
+- offline-report.md、mirror/browser-check.json 与 qa/ 截图。
 
 这些本地文件仍有用途；只克隆平台仓不会自动恢复离线资料、依赖源码、缓存和原始证据。
 

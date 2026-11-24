@@ -12,11 +12,11 @@
 | docs/ | 离线讲义、学习记录（topics/ 下的 Engineering 与 Knowledge）、来源登记与资料核对记录；入口见 [资料目录](docs/README.md) |
 | tools/、cache/、logs/ | 专用工具、源码与构建缓存、迁移前原始证据 |
 
-RT-Thread 来源与版本集中登记在 [rt-thread-source.json](docs/rt-thread-source.json)。主工程初始来源见 [sources.json](ysyx-workbench/docs/sources.json)。独立 RTT 源码由自身 Git 管理，不纳入平台仓；无需再次运行主工程 init.sh 的 rt-thread 子命令。
+RT-Thread 来源与版本集中登记在 [rt-thread-source.json](docs/registry/rt-thread-source.json)。主工程初始来源见 [sources.json](ysyx-workbench/docs/sources.json)。独立 RTT 源码由自身 Git 管理，不纳入平台仓；无需再次运行主工程 init.sh 的 rt-thread 子命令。
 
 ## 当前进度
 
-更新：2026-11-16。
+更新：2026-11-24。
 
 - 主工程仍是课程初始工程；NEMU 已实现的指令为 auipc、lbu、sb、ebreak，NPC 仍为空模块和 Hello 示例。
 - 改名后通过平台 Doctor；Windows PowerShell 5.1 入口完成 NEMU 四指令 GOOD TRAP 和 Verilator 官方示例检查，PowerShell 7 入口完成 NVBoard 5 秒图形启动。证据集中登记在 logs/workbench-rename.json。
@@ -26,7 +26,18 @@ RT-Thread 来源与版本集中登记在 [rt-thread-source.json](docs/rt-thread-
 - E4 资产线 2026-11-14 批量推进：教程第 02 章（波形一键仿真与另一种仿真器，check 13 / 0、mutate 10 OK）、第 03 章（接入NVBoard流水灯与静态检查，check 20 / 0、mutate 11 OK）、第 04 章（描述电路的纪律与两个模板，check 6 / 0、mutate 7 OK）；fundamentals 01（11 / 0、7 OK）、04（17 / 0、6 OK）、02（6 / 0、5 OK）、05（12 / 0、9 OK）、06（地图型引用核对制，21 / 0、6 OK）。旧整篇教程与全部素材稿已删除，RTL 仿真段资产齐备。
 - E4 资产线 2026-11-16 收官：七篇新资产全部走完独立审稿并修复（每篇由未参与写作的审稿子代理交问题单，共 89 项发现全部逐条处理；修复涉及的判据改动已复跑，t04 的 LATCH 无 -Wall 判据改为真实无 -Wall 实跑、fundamentals 06 的 Accellera 判据补"未能核对"条件，复跑后基线不变），七篇在 tutorials/fundamentals README 改标"定稿 2026-11-16"。同日完成章内 apparatus 清除（验证装置只在 labs，章内零判据清单与注错说明；labs 判据与基线未动）与结构重排（教程四章尾节裁撤；fundamentals 分主题目录重编号 01~06，labs 同步迁移）。全部八篇 check.sh 复跑全绿、数字与登记一致。
 - E4 学习线 2026-11-16 开课推进：教程第 01 章按渐退制逐段对话带做，C++ 零基础第一课（类与对象、new、指针）自测全过；2.1 收货全对，2.2 示范段对账完成，接续点为 touch our.v 对照实验收货后进 2.3。三类检验与 npc 内独立复现未开始。详见 E4 spec 第九节日志。
+- E4 学习线 2026-11-16～17 补充实测：学员亲手运行第 01 章 §4 的普通版与调试版 eval 探针，已正确解释“改 b 后立即读 f 仍为旧值，eval 后按新输入计算”；调试版的一位端口越界输入被拦截，无 P5、退出码 1。检查触发位置的口答待收货，整章学习检验与 npc 内独立实现继续待做；过程见 E4 spec 第九节。
+- E4 学习线 2026-11-17 接续：用户已确认理解构建时添加 `--runtime-debug` 与运行时执行检查的区别。采用学习驱动的专题安排，下一小课题从 P4 仿真时间为 0 开始，依次分清求值、时间推进与时钟边沿，再进入检查与故意改坏实验。已有 §2.2 构建对照待收货项保留；整章检验、专题迁移与 npc 内独立实现继续待做。
+- 讲义任务线 2026-11-24 建立（方案二，双工程）：AI 按讲义顺序直接实现讲义要求的工程任务，放在独立的参考工程里。参考工程环境已建并通过验证：沙箱项目 ysyx-ref，起点为正式工程 master 的 0e7bd5b，零改动。讲义任务尚未开工，正式工程未改动。约定与任务清单见 [学习与项目路线](docs/topics/Engineering/Todo/学习与项目路线.md) 的「讲义任务线」一节。
 - 完整 CPU、NPC 差分链路、操作系统和后续课程单元尚未完成；旧工程的验收不能计入本工程进度。
+
+## 学习方式
+
+2026-11-17 定案：本会话主要负责学习线。以 YSYX 为任务目标与问题入口，围绕问题系统学习原理、标准、实现及学术和工业方法。tutorials 与 fundamentals 都通过对话和亲手实验带学，小课题学完后反补两类知识资产。具体方法与来源见[总路线](docs/topics/Engineering/Todo/学习与项目路线.md)，仿真与验证专题及接续见 [E4 spec](docs/topics/Engineering/Todo/E4-仿真与验证.md)。
+
+## 讲义任务线
+
+2026-11-24 定案：新增讲义任务线，采用双工程。正式工程 ysyx-workbench 仍由用户亲手实现；AI 按讲义要求搭建的内容放在沙箱项目 ysyx-ref 的参考工程里，两边互不写入。工程完成、资产定稿与学员掌握分别登记。约定与任务清单见[学习与项目路线](docs/topics/Engineering/Todo/学习与项目路线.md) 的「讲义任务线」一节。
 
 ## 日常入口
 

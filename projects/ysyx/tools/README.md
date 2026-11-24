@@ -5,7 +5,7 @@
 - install-dependencies.sh：安装原 NEMU、Verilator 与 NVBoard 所需系统包；历史前后清单在项目 logs/dependencies/，本轮未重装。
 - build-verilator.sh：按 ysyx-workbench/docs/sources.json 登记的源码提交构建。默认安装到项目 cache/toolchain-install/verilator-5.052，或显式设置 STUDYLAB_TOOLCHAIN_PREFIX；不覆盖已经只读共享的工具版本。构建验证后再由平台管理方登记共享位置。
 - restore-native-link.ps1：在 Windows 按已有权限恢复 ysyx-workbench 的 RV64 相对目录链接；原始操作与模式验证见 ysyx-workbench/docs/开发环境.md，不用普通文本文件替代链接。
-- mirror_docs.py：YSYX 与 PA 离线资料工具，输出保留在本项目 docs/；可读结果写入 offline-report.md，保留手写 README.md。结构与管理见 [资料目录说明](../docs/README.md)。
+- mirror_docs.py：YSYX 与 PA 离线资料工具，网页输出保留在本项目 docs/site 与 docs/originals；JSON 清单与核对记录写入 docs/mirror/，可读结果写入 offline-report.md，保留手写 README.md。结构与管理见 [资料目录说明](../docs/README.md)。
 
 现有已验证的 Verilator 5.052 保留在 tools/verilator-5.052，由平台注册为只读共享工具。日常环境检查从 Workspace 根目录执行 sandbox.ps1 -Action Run -Project ysyx -Command @('python3','-B','tools/first-run.py')。此 tools/first-run.py 指 ysyx-workbench 内的工具，因为默认 cwd 是 ysyx-workbench。
 
@@ -27,4 +27,4 @@
 & .\Tools\wsl-sandbox\sandbox.ps1 -Action Run -Project ysyx -Network -Command @('python3', '-B', '../tools/mirror_docs.py')
 ~~~
 
---refresh 重新获取上游内容；--retry-failed 重试失败请求；--render-only 从已保存原始内容重生成网页。清单和核对结果由工具维护，课程进度仍在项目 README。人工笔记、专题和配图不写入镜像生成目录。
+--refresh 重新获取上游内容；--retry-failed 重试失败请求；--render-only 从已保存原始内容重生成网页。清单和核对结果（JSON）由工具维护在 docs/mirror/；课程进度仍在项目 README。人工笔记、专题和配图不写入镜像生成目录。

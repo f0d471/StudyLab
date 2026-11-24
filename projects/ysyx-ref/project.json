@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "ysyx-ref",
+  "kind": "project",
+  "tags": [
+    "architecture",
+    "risc-v",
+    "reference"
+  ],
+  "workingDirectory": "ysyx-workbench-ref",
+  "environment": {
+    "YSYX_HOME": "/workspace/ysyx-workbench-ref",
+    "NEMU_HOME": "/workspace/ysyx-workbench-ref/nemu",
+    "AM_HOME": "/workspace/ysyx-workbench-ref/abstract-machine",
+    "NPC_HOME": "/workspace/ysyx-workbench-ref/npc",
+    "NAVY_HOME": "/workspace/ysyx-workbench-ref/navy-apps",
+    "NVBOARD_HOME": "/workspace/ysyx-workbench-ref/nvboard",
+    "PATH": "/toolchains/verilator-5052/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  },
+  "capabilities": [
+    "gui",
+    "network"
+  ],
+  "toolchains": [
+    "verilator-5052"
+  ],
+  "cacheDirectory": "cache",
+  "limits": {
+    "runtimeSeconds": 1800
+  },
+  "smokeCommand": [
+    "python3",
+    "-B",
+    "tools/first-run.py"
+  ]
+}

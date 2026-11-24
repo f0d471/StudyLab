@@ -197,7 +197,9 @@ class Mirror:
         self.root.mkdir(parents=True, exist_ok=True)
         self.site.mkdir(exist_ok=True)
         self.originals.mkdir(exist_ok=True)
-        self.manifest_path = self.root / "manifest.json"
+        self.mirror = self.root / "mirror"
+        self.mirror.mkdir(exist_ok=True)
+        self.manifest_path = self.mirror / "manifest.json"
         self.records = {}
         if self.manifest_path.exists():
             saved = json.loads(self.manifest_path.read_text(encoding="utf-8"))
@@ -209,7 +211,7 @@ class Mirror:
         self.seen = set()
         self.external = set()
         self.routes = set(saved.get("routes", [])) if self.manifest_path.exists() else set()
-        external_file = self.root / "external-links.json"
+        external_file = self.mirror / "external-links.json"
         if external_file.exists():
             self.external = {(r["url"], r["relation"]) for r in json.loads(external_file.read_text(encoding="utf-8"))}
         self.rate_lock = threading.Lock()
@@ -350,7 +352,7 @@ class Mirror:
         tmp.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding="utf-8")
         tmp.replace(self.manifest_path)
         summary = collections.Counter(r["status"] for r in self.records.values())
-        (self.root/"progress.json").write_text(json.dumps({"updated_utc":now(),"queued":len(self.pending),"completed":self.completed,
+        (self.mirror/"progress.json").write_text(json.dumps({"updated_utc":now(),"queued":len(self.pending),"completed":self.completed,
             "status":dict(summary),"download_bytes":self.total_bytes},ensure_ascii=False,indent=2),encoding="utf-8")
 
     def crawl(self):
@@ -516,14 +518,14 @@ summary{cursor:pointer;font-weight:bold;font-size:20px;padding:12px 0}li{margin:
 #results p{font-size:14px;margin:2px 0 14px}nav{display:flex;gap:24px;padding:14px 0}.note{background:#eaf3fa;border-left:4px solid #3876a3;padding:12px 16px}</style></head><body>
 <h1>YSYX 与 PA 离线资料</h1><p>公开网页的本地学习副本。保留来源、原有正文和许可说明；网页会持续更新，本副本只代表下载时的版本。</p>
 <nav><a href="ysyx.oscc.cc/docs/index.html">一生一芯课程主页</a><a href="ysyx.oscc.cc/docs/ics-pa/index.html">PA 实验主页</a><a href="../offline-report.md">下载与核对记录</a></nav>
-<p class="note">讲义使用本地网页跳转；站内课件提供连续阅读版。站外视频、文章、云文档及服务仍需联网，完整清单在 external-links.json。</p>
+<p class="note">讲义使用本地网页跳转；站内课件提供连续阅读版。站外视频、文章、云文档及服务仍需联网，完整清单在 mirror/external-links.json。</p>
 <label for="search">全文搜索（支持多个关键词）</label><input id="search" type="search" placeholder="例如：差分测试、流水线、表达式求值"><p id="search-status"></p><ul id="results"></ul>
 <h2>全部页面目录</h2>"""+catalog+"""<script src="_offline/search-data.js"></script><script src="_offline/search.js"></script></body></html>"""
         if (self.root/"README.md").is_file():
             landing=landing.replace("</nav>", '<a href="../README.md">资料目录与维护规则</a></nav>', 1)
         (self.site/"index.html").write_text(landing,encoding="utf-8")
-        (self.root/"content-check.json").write_text(json.dumps({"checked_pages":len(pages),"mismatches":content_errors},ensure_ascii=False,indent=2),encoding="utf-8")
-        (self.root/"external-links.json").write_text(json.dumps([{"url":u,"relation":r} for u,r in sorted(self.external)],ensure_ascii=False,indent=2),encoding="utf-8")
+        (self.mirror/"content-check.json").write_text(json.dumps({"checked_pages":len(pages),"mismatches":content_errors},ensure_ascii=False,indent=2),encoding="utf-8")
+        (self.mirror/"external-links.json").write_text(json.dumps([{"url":u,"relation":r} for u,r in sorted(self.external)],ensure_ascii=False,indent=2),encoding="utf-8")
         if not (self.root/"offline-report.md").exists():
             (self.root/"offline-report.md").write_text("# 离线镜像下载与核对记录\n\n离线网页已生成，下载与引用核对结果正在写入。\n",encoding="utf-8")
         self.save(finished=True)
@@ -591,7 +593,7 @@ summary{cursor:pointer;font-weight:bold;font-size:20px;padding:12px 0}li{margin:
         self.resolve_aliases()
         failures=[r for r in self.records.values() if r.get("status")!="ok" and not r.get("resolved_to")]
         aliases=[{"url":r["url"],"resolved_to":r["resolved_to"]} for r in self.records.values() if r.get("resolved_to")]
-        content=json.loads((self.root/"content-check.json").read_text(encoding="utf-8"))
+        content=json.loads((self.mirror/"content-check.json").read_text(encoding="utf-8"))
         report={"verified_utc":now(),"downloaded_pages":content_page_count,"page_route_count":len(self.routes),
                 "route_coverage":{"discovered":len(self.routes),"downloaded":sum(self.records.get(u,{}).get("status")=="ok" for u in self.routes),
                                   "not_downloaded":[u for u in sorted(self.routes) if self.records.get(u,{}).get("status")!="ok"]},
@@ -601,7 +603,7 @@ summary{cursor:pointer;font-weight:bold;font-size:20px;padding:12px 0}li{margin:
                 "remote_embedded_assets":remote_embeds,"unresolved_source_fragments":fragments,"download_failures":failures}
         report["local_reference_check_passed"]=not missing
         report["content_preservation_passed"]=not content["mismatches"]
-        (self.root/"verification.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
+        (self.mirror/"verification.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
         self.write_report(report)
         print(json.dumps({k:v for k,v in report.items() if k not in ("download_failures","missing_local_files","remote_embedded_assets","unresolved_source_fragments","content_preservation","resolved_navigation_aliases")},ensure_ascii=False,indent=2),flush=True)
         print(json.dumps({"failures":len(failures),"missing_local_files":len(missing),"remote_embedded_assets":len(remote_embeds),"unresolved_source_fragments":len(fragments)},ensure_ascii=False),flush=True)
@@ -622,25 +624,25 @@ summary{cursor:pointer;font-weight:bold;font-size:20px;padding:12px 0}li{margin:
             "","## 抓取范围与保留方式","",
             "从两个入口、站点公开路由表及页面链接递归发现 docs/ 内公开讲义，包含站点列出的往期版本与语言版本；同时抓取链接到的站内 slides/ 课件及正文引用的图片、样式、字体和附件。",
             "","保留服务端输出的完整正文，不通过摘要重写。禁用原站 SPA 路由与统计脚本，使链接能在 file:// 下直接跳转；站内课件改为连续阅读版，所有幻灯片与分步内容展开，公式使用随附 MathJax 离线渲染。",
-            "","站外视频、网站文章、云文档、搜索、问卷和账号服务保留原链接，不递归复制第三方网站；清单见 external-links.json。未访问登录内容，也未绕过访问限制。",
+            "","站外视频、网站文章、云文档、搜索、问卷和账号服务保留原链接，不递归复制第三方网站；清单见 mirror/external-links.json。未访问登录内容，也未绕过访问限制。",
             "","## 文件索引","",
             "| 路径 | 内容 |","| --- | --- |",
             "| site/ | 可直接浏览的离线网页与资源 |",
             "| originals/ | 下载时的原始 HTML、CSS 和路由脚本，用于来源比对与重新生成 |",
-            "| manifest.json | 唯一下载清单：URL、时间、HTTP 状态、来源关系、字节数与文件位置 |",
-            "| verification.json | 本地链接、依赖、正文保留及未获取资源的核对结果 |",
-            "| content-check.json | 原网页与离线网页正文及结构计数比较 |",
-            "| external-links.json | 保留为在线访问的站外链接 |",
-            "| progress.json | 下载断点与当前进度 |",
+            "| mirror/manifest.json | 唯一下载清单：URL、时间、HTTP 状态、来源关系、字节数与文件位置 |",
+            "| mirror/verification.json | 本地链接、依赖、正文保留及未获取资源的核对结果 |",
+            "| mirror/content-check.json | 原网页与离线网页正文及结构计数比较 |",
+            "| mirror/external-links.json | 保留为在线访问的站外链接 |",
+            "| mirror/progress.json | 下载断点与当前进度 |",
             "","## 本次结果","",
             "- 官网公开路由表："+str(r["route_coverage"]["discovered"])+" 个地址，已取得 "+str(r["route_coverage"]["downloaded"])+" 个。",
             "- 页面："+str(r["downloaded_pages"])+"；样式："+str(kinds["css"])+"；成功下载文件："+str(r["downloaded_files"])+"。",
             "- 原始下载总量："+str(round(r["download_bytes"]/1024**2,2))+" MiB。",
-            "- 已解析的导航路径或省略扩展名链接："+str(len(r["resolved_navigation_aliases"]))+"，原请求与对应页面记录在 verification.json。",
+            "- 已解析的导航路径或省略扩展名链接："+str(len(r["resolved_navigation_aliases"]))+"，原请求与对应页面记录在 mirror/verification.json。",
             "- 检查本地引用："+str(r["checked_local_references"])+"；缺失本地文件："+str(len(r["missing_local_files"]))+"。",
             "- 正文或结构比较差异："+str(len(r["content_preservation"]["mismatches"]))+"。",
             "- 未成功获取："+str(len(failures))+"；仍引用在线图片或样式："+str(len(r["remote_embedded_assets"]))+"。",
-            "- 原站锚点无法对应："+str(len(r["unresolved_source_fragments"]))+"，详情见 verification.json。",
+            "- 原站锚点无法对应："+str(len(r["unresolved_source_fragments"]))+"，详情见 mirror/verification.json。",
             "","## 更新与复核","",
             "工具见 [mirror_docs.py](../tools/mirror_docs.py)，使用方法见 [工具说明](../tools/README.md)。默认复用已下载内容并续传；刷新时显式使用 --refresh。站点会更新，离线副本不会自动同步。",
             "","## 来源与许可","",

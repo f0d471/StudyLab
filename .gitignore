@@ -39,10 +39,17 @@ __pycache__/
 !/projects/ysyx/tools/mirror_docs.py
 
 
-!/projects/ysyx/docs/rt-thread-source.json
-!/projects/ysyx/docs/riscv-spec-source.json
-!/projects/ysyx/docs/verilator-guide-source.json
-!/projects/ysyx/docs/sv1800-source.json
+!/projects/ysyx/docs/registry/
+/projects/ysyx/docs/registry/*
+!/projects/ysyx/docs/registry/rt-thread-source.json
+!/projects/ysyx/docs/registry/riscv-spec-source.json
+!/projects/ysyx/docs/registry/verilator-guide-source.json
+!/projects/ysyx/docs/registry/sv1800-source.json
+
+!/projects/ysyx-ref/
+/projects/ysyx-ref/*
+!/projects/ysyx-ref/project.json
+!/projects/ysyx-ref/README.md
 
 $RECYCLE.BIN/
 System Volume Information/
